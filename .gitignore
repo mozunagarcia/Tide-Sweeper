@@ -1,3 +1,27 @@
-tidesweeper.exe
-c_cpp_properties.json
-tasks.json
+# --- Build system ---
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# --- Executables & binaries ---
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
+*.pdb
+*.log
+
+# --- VS Code local cache ---
+.vscode/ipch/
+.vscode/.cmake/
+.vscode/c_cpp_properties.json
+.vscode/cmake-kits.json
+
+# --- OS junk files ---
+.DS_Store
+Thumbs.db

@@ -3,19 +3,21 @@
     {
       "name": "Win32",
       "includePath": [
-        "${workspaceFolder}/**",
-        "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32/include"
-      ],
-      "defines": [
-        "_DEBUG",
-        "UNICODE",
-        "_UNICODE",
-        "SDL_MAIN_HANDLED"
-      ],
-      "compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
-      "cStandard": "c17",
-      "cppStandard": "c++17",
-      "intelliSenseMode": "windows-gcc-x64"
+    "${workspaceFolder}/**",
+    "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32/include/SDL2",
+    "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_image-2.8.2/x86_64-w64-mingw32/include/SDL2"
+],
+"defines": [
+    "SDL_MAIN_HANDLED",
+    "_DEBUG",
+    "UNICODE",
+    "_UNICODE"
+],
+"compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
+"cStandard": "c17",
+"cppStandard": "c++17",
+"intelliSenseMode": "windows-gcc-x64"
+
     }
   ],
   "version": 4
