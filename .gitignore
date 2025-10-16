@@ -21,6 +21,7 @@ compile_commands.json
 .vscode/.cmake/
 .vscode/c_cpp_properties.json
 .vscode/cmake-kits.json
+.vscode/tasks_managed.json
 
 # --- OS junk files ---
 .DS_Store

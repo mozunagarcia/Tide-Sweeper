@@ -1,0 +1,9 @@
+{
+    // Always tell CMake where to find your source and build folders
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+
+    // Optional: show CMake Tools status bar
+    "cmake.showOptionsButton": true,
+    "cmake.showBuildTargetName": true
+}
