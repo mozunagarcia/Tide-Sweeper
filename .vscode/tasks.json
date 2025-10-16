@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build Tide Sweeper",
+      "type": "shell",
+      "command": "g++",
+      "args": [
+        "src/main.cpp",
+        "-IC:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32/include",
+        "-LC:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32/lib",
+        "-lmingw32",
+        "-lSDL2",
+        "-o",
+        "tidesweeper.exe"
+      ],
+      "group": "build",
+      "problemMatcher": ["$gcc"]
+    }
+  ]
+}
