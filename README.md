@@ -1,8 +1,8 @@
-# Tide Sweeper 🌊
+# Tide Sweeper 
 
 A simple side-scrolling submarine game built with SDL2 and CMake.
 
-## 🧩 Dependencies
+##  Dependencies
 
 | Platform | How to install |
 |-----------|----------------|
@@ -10,11 +10,11 @@ A simple side-scrolling submarine game built with SDL2 and CMake.
 | **macOS** | Install Homebrew and run:<br>`brew install sdl2 sdl2_image cmake` |
 | **Linux** | Run:<br>`sudo apt install build-essential cmake libsdl2-dev libsdl2-image-dev` |
 
-## 🏗️ Building
+##  Building
 
 ```bash
 git clone https://github.com/mozunagarcia/Tide-Sweeper.git
-cd TideSweeper
+cd Tide-Sweeper
 mkdir build && cd build
 cmake ..
 cmake --build . --config Release

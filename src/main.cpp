@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
 
         // --- Keyboard input ---
         const Uint8* keys = SDL_GetKeyboardState(NULL);
-        if (keys[SDL_SCANCODE_UP])    sub.y -= 2;
-        if (keys[SDL_SCANCODE_DOWN])  sub.y += 2;
+        if (keys[SDL_SCANCODE_UP])    sub.y -= 5;
+        if (keys[SDL_SCANCODE_DOWN])  sub.y += 5;
         if (keys[SDL_SCANCODE_LEFT])  sub.x -= 2;
         if (keys[SDL_SCANCODE_RIGHT]) sub.x += 2;
 
