@@ -19,6 +19,7 @@ if (WIN32)
 
     set(EXTRA_LIBS mingw32 SDL2main SDL2 SDL2_image)
 
+
 elseif (APPLE)
     # --- macOS ---
     # Locate SDL2 and SDL2_image via Homebrew (works for both Intel and Apple Silicon)
@@ -62,3 +63,6 @@ add_custom_command(TARGET TideSweeper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_DEST_DIR}"
 )
+
+add_executable(CollisionTest Tests/CollisionTest.cpp)
+target_link_libraries(CollisionTest ${EXTRA_LIBS})
