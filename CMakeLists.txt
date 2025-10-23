@@ -7,17 +7,24 @@ if (WIN32)
     # --- Windows ---
     set(SDL2_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32")
     set(SDL2_IMAGE_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_image-2.8.2/x86_64-w64-mingw32")
+    set(SDL2_TTF_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_ttf-2.24.0/x86_64-w64-mingw32")
 
     include_directories(
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
+        ${SDL2_TTF_DIR}/include/SDL2
     )
     link_directories(
         ${SDL2_DIR}/lib
         ${SDL2_IMAGE_DIR}/lib
+        ${SDL2_TTF_DIR}/lib
     )
 
-    set(EXTRA_LIBS mingw32 SDL2main SDL2 SDL2_image)
+    set(EXTRA_LIBS mingw32
+        SDL2main
+        SDL2
+        SDL2_image
+        SDL2_ttf)
 
 
 elseif (APPLE)
