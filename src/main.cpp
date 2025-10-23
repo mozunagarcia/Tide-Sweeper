@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <iostream>
+#include "ScoreDisplay.hpp"
 
 // ---------------------------------------------
 // Helper: load an image as an SDL texture
@@ -71,6 +72,10 @@ int main(int argc, char* argv[]) {
     const int bgWidth = 800;
     const int bgHeight = 600;
 
+    // Create score display in top-right corner
+    ScoreDisplay scoreDisplay(renderer, 650, 10, 140, 50);  // x, y, width, height
+    scoreDisplay.setScore(0);  // Initialize score to 0
+
     bool running = true;
     SDL_Event event;
 
@@ -82,12 +87,24 @@ int main(int argc, char* argv[]) {
                 running = false;
         }
 
-        // --- Keyboard input ---
+
+        // Keyboard input ---
         const Uint8* keys = SDL_GetKeyboardState(NULL);
         if (keys[SDL_SCANCODE_UP])    sub.y -= 5;
         if (keys[SDL_SCANCODE_DOWN])  sub.y += 5;
         if (keys[SDL_SCANCODE_LEFT])  sub.x -= 2;
         if (keys[SDL_SCANCODE_RIGHT]) sub.x += 2;
+
+        // Aggiorna il punteggio se viene premuta la barra spaziatrice
+        static bool spaceWasPressed = false;
+        if (keys[SDL_SCANCODE_SPACE]) {
+            if (!spaceWasPressed) {
+                scoreDisplay.setScore(scoreDisplay.getScore() + 10);
+                spaceWasPressed = true;
+            }
+        } else {
+            spaceWasPressed = false;
+        }
 
         // Clamp submarine to screen
         if (sub.x < 50)  sub.x = 50;
@@ -114,6 +131,9 @@ int main(int argc, char* argv[]) {
 
         // draw submarine
         SDL_RenderCopyEx(renderer, submarine, nullptr, &sub, 0, nullptr, SDL_FLIP_HORIZONTAL);
+
+        // Draw score display
+        scoreDisplay.render();
 
         SDL_RenderPresent(renderer);
         SDL_Delay(16); // ~60 FPS

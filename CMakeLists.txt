@@ -24,6 +24,7 @@ elseif (APPLE)
     # Locate SDL2 and SDL2_image via Homebrew (works for both Intel and Apple Silicon)
     set(SDL2_PREFIX "/opt/homebrew/opt/sdl2")
     set(SDL2_IMAGE_PREFIX "/opt/homebrew/opt/sdl2_image")
+    set(SDL2_TTF_PREFIX "/opt/homebrew/opt/sdl2_ttf")
 
     # Fall back to /usr/local for Intel Macs
     if(NOT EXISTS "${SDL2_PREFIX}")
@@ -32,17 +33,22 @@ elseif (APPLE)
     if(NOT EXISTS "${SDL2_IMAGE_PREFIX}")
         set(SDL2_IMAGE_PREFIX "/usr/local/opt/sdl2_image")
     endif()
+    if(NOT EXISTS "${SDL2_TTF_PREFIX}")
+        set(SDL2_TTF_PREFIX "/usr/local/opt/sdl2_ttf")
+    endif()
 
     include_directories(
         ${SDL2_PREFIX}/include/SDL2
         ${SDL2_IMAGE_PREFIX}/include/SDL2
+        ${SDL2_TTF_PREFIX}/include/SDL2
     )
     link_directories(
         ${SDL2_PREFIX}/lib
         ${SDL2_IMAGE_PREFIX}/lib
+        ${SDL2_TTF_PREFIX}/lib
     )
 
-    set(EXTRA_LIBS SDL2 SDL2_image)
+    set(EXTRA_LIBS SDL2 SDL2_image SDL2_ttf)
 
 else()
     # --- Linux / others ---
@@ -52,7 +58,10 @@ else()
     set(EXTRA_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
 endif()
 
-add_executable(TideSweeper src/main.cpp)
+add_executable(TideSweeper 
+    src/main.cpp
+    src/ScoreDisplay.cpp
+)
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
 
 # Copy assets automatically
