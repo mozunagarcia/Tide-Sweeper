@@ -3,6 +3,7 @@
 #include <SDL_image.h>
 #include <iostream>
 #include <vector> //added this - Laura
+#include "Litter.h"
 
 // ---------------------------------------------
 // Helper: load an image as an SDL texture
@@ -18,26 +19,6 @@ SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
     SDL_FreeSurface(surf);
     return tex;
 }
-
-
-// -------------------- LAURA EDITS --------------------
-
-struct Litter {
-    SDL_Texture* texture;  // The loaded image for the litter
-    float x, y;            // Position
-    float dx, dy;          // Speed (change per frame)
-    bool active = true;    // Whether it’s visible / collectible
-};
-
-// Helper: check if two rectangles overlap (collision)
-bool checkCollision(const SDL_Rect& a, const SDL_Rect& b) {
-    return (a.x < b.x + b.w &&
-            a.x + a.w > b.x &&
-            a.y < b.y + b.h &&
-            a.y + a.h > b.y);
-}
-
-// -------------------- LAURA EDITS --------------------
 
 int main(int argc, char* argv[]) {
     // --- Initialize SDL and SDL_image ---
@@ -96,14 +77,15 @@ SDL_Texture* smallcanTex = loadTexture(renderer, "Assets/smallcan.png");
 SDL_Texture* beerTex = loadTexture(renderer, "Assets/beer.png");
 
 std::vector<Litter> litterItems = {
-    {canTex, 200, 300, 0.3f, 0.1f},     // slight drift
-    {bottleTex, 500, 400, -0.2f, 0.15f},
-    {bagTex, 650, 250, 0.1f, -0.25f},
-    {cupTex, 350, 200, -0.05f, 0.05f},   
-    {colaTex, 700, 500, 0.25f, -0.1f},   
-    {smallcanTex, 100, 450, 0.2f, 0.25f},
-    {beerTex, 400, 350, -0.3f, 0.2f}     
+    Litter(canTex, 200, 300, 1.5f),
+    Litter(bottleTex, 500, 400, 2.0f),
+    Litter(bagTex, 650, 250, 1.8f),
+    Litter(cupTex, 350, 200, 1.3f),
+    Litter(colaTex, 700, 500, 2.2f),
+    Litter(smallcanTex, 100, 450, 1.6f),
+    Litter(beerTex, 400, 350, 1.9f)
 };
+
 
 
 // -------------------- LAURA EDITS --------------------
@@ -146,30 +128,23 @@ std::vector<Litter> litterItems = {
 
 //-------------------- LAURA EDITS --------------------
 
-        for (auto& litter : litterItems) {
-    litter.x += litter.dx;
-    litter.y += litter.dy;
-
-    // Bounce off edges of the screen so they don’t drift away
-    if (litter.x < 0 || litter.x > 760) litter.dx = -litter.dx;
-    if (litter.y < 0 || litter.y > 560) litter.dy = -litter.dy;
-}
-
 // Check for collisions between submarine and litter
 
+// --- Update litter ---
 for (auto& litter : litterItems) {
-    if (!litter.active) continue;  // skip inactive litter
+    litter.update(); // now handles movement & looping
 
-    SDL_Rect litterRect = { static_cast<int>(litter.x), static_cast<int>(litter.y), 64, 64 };
-    if (checkCollision(sub, litterRect)) {
-        litter.active = false;  // "collect" the litter
-
-        // Respawn the litter somewhere new
-        litter.x = rand() % 700 + 50;   // random x position
-        litter.y = rand() % 500 + 50;   // random y position
-        litter.active = true;
+    // Check collision with submarine
+    if (litter.checkCollision(sub)) {
+        litter.collect(); // disappears, respawns later
     }
 }
+
+// --- Render litter ---
+for (auto& litter : litterItems) {
+    litter.render(renderer);
+}
+
 
 // -------------------- LAURA EDITS --------------------
 
