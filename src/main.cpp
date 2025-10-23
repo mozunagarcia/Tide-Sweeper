@@ -2,6 +2,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <iostream>
+#include <vector> //added this - Laura
+#include "Litter.h"
 #include "ScoreDisplay.hpp"
 
 // ---------------------------------------------
@@ -54,8 +56,8 @@ int main(int argc, char* argv[]) {
     }
 
     // --- Load textures ---
-    SDL_Texture* ocean = loadTexture(renderer, "assets/ocean.png");
-    SDL_Texture* submarine = loadTexture(renderer, "assets/submarine.png");
+    SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
+    SDL_Texture* submarine = loadTexture(renderer, "Assets/submarine.png");
     if (!ocean || !submarine) {
         std::cerr << "Missing textures! Place ocean.png and submarine.png in /assets\n";
         SDL_DestroyRenderer(renderer);
@@ -64,6 +66,31 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+
+// -------------------- LAURA EDITS --------------------
+
+SDL_Texture* canTex = loadTexture(renderer, "Assets/can.png");
+SDL_Texture* bottleTex = loadTexture(renderer, "Assets/bottle.png");
+SDL_Texture* bagTex = loadTexture(renderer, "Assets/bag.png");
+SDL_Texture* cupTex = loadTexture(renderer, "Assets/cup.png");
+SDL_Texture* colaTex = loadTexture(renderer, "Assets/cola.png");
+SDL_Texture* smallcanTex = loadTexture(renderer, "Assets/smallcan.png");
+SDL_Texture* beerTex = loadTexture(renderer, "Assets/beer.png");
+
+std::vector<Litter> litterItems = {
+    Litter(canTex, 200, 300, 1.5f),
+    Litter(bottleTex, 500, 400, 2.0f),
+    Litter(bagTex, 650, 250, 1.8f),
+    Litter(cupTex, 350, 200, 1.3f),
+    Litter(colaTex, 700, 500, 2.2f),
+    Litter(smallcanTex, 100, 450, 1.6f),
+    Litter(beerTex, 400, 350, 1.9f)
+};
+
+
+
+// -------------------- LAURA EDITS --------------------
+
 
     // --- Game state ---
     SDL_Rect sub = { 200, 275, 100, 60 }; // submarine position
@@ -78,6 +105,9 @@ int main(int argc, char* argv[]) {
 
     bool running = true;
     SDL_Event event;
+
+    srand(static_cast<unsigned int>(time(nullptr)));
+
 
     // --- Main loop ---
     while (running) {
@@ -112,6 +142,29 @@ int main(int argc, char* argv[]) {
         if (sub.y < 0)   sub.y = 0;
         if (sub.y > 540) sub.y = 540;
 
+
+//-------------------- LAURA EDITS --------------------
+
+// Check for collisions between submarine and litter
+
+// --- Update litter ---
+for (auto& litter : litterItems) {
+    litter.update(); // now handles movement & looping
+
+    // Check collision with submarine
+    if (litter.checkCollision(sub)) {
+        litter.collect(); // disappears, respawns later
+    }
+}
+
+// --- Render litter ---
+for (auto& litter : litterItems) {
+    litter.render(renderer);
+}
+
+
+// -------------------- LAURA EDITS --------------------
+
         // --- Scroll background to the RIGHT visually ---
         // Increase offset so the texture slides right (new tiles appear from left)
         cameraX += scrollSpeed;
@@ -129,6 +182,22 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest1);
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest2);
 
+// -------------------- LAURA EDITS --------------------
+
+// Draw litter on top of the ocean background
+for (const auto& litter : litterItems) {
+    if (!litter.active) continue;  // skip hidden ones
+
+    SDL_Rect dest = {
+        static_cast<int>(litter.x),
+        static_cast<int>(litter.y),
+        90, 90
+    };
+    SDL_RenderCopy(renderer, litter.texture, nullptr, &dest);
+}
+
+// -------------------- LAURA EDITS --------------------
+
         // draw submarine
         SDL_RenderCopyEx(renderer, submarine, nullptr, &sub, 0, nullptr, SDL_FLIP_HORIZONTAL);
 
@@ -140,6 +209,21 @@ int main(int argc, char* argv[]) {
     }
 
     // --- Cleanup ---
+
+// -------------------- LAURA EDITS --------------------
+
+// Free litter textures
+SDL_DestroyTexture(canTex);
+SDL_DestroyTexture(bottleTex);
+SDL_DestroyTexture(bagTex);
+SDL_DestroyTexture(cupTex);
+SDL_DestroyTexture(colaTex);
+SDL_DestroyTexture(smallcanTex);
+SDL_DestroyTexture(beerTex);
+
+
+// -------------------- LAURA EDITS --------------------
+
     SDL_DestroyTexture(ocean);
     SDL_DestroyTexture(submarine);
     SDL_DestroyRenderer(renderer);
