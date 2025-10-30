@@ -6,22 +6,25 @@
 #include <string>
 
 class ScoreDisplay {
-public:
-    ScoreDisplay(SDL_Renderer* renderer, int x, int y, int width, int height);
-    ~ScoreDisplay();
+    public:
+        ScoreDisplay(SDL_Renderer* renderer, int x, int y, int width, int height);
+        ~ScoreDisplay();
 
-    void render();
-    void setScore(int newScore);
-    int getScore() const;
-
-private:
-    SDL_Renderer* renderer;
-    SDL_Rect scoreRect;
-    int score;
-    TTF_Font* font;
-    SDL_Texture* textTexture;
-    void renderScore();
-    void updateTextTexture();
+        void render();
+        void setScore(int newScore);
+        int getScore() const;
+        int getLevel() const;    private:
+        SDL_Renderer* renderer;
+        SDL_Rect scoreRect;
+        int score;
+        int level;
+        TTF_Font* font;
+        SDL_Texture* scoreTexture;
+        SDL_Texture* levelTexture;
+        void renderScore();
+        void renderLevel();
+        void updateTextTexture();
+        void updateLevelTexture();
 };
 
 #endif // SCORE_DISPLAY_HPP

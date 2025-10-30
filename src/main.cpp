@@ -100,7 +100,7 @@ std::vector<Litter> litterItems = {
     const int bgHeight = 600;
 
     // Create score display in top-right corner
-    ScoreDisplay scoreDisplay(renderer, 650, 10, 140, 50);  // x, y, width, height
+    ScoreDisplay scoreDisplay(renderer, 650, 10, 140, 80);  // x, y, width, height - increased height to 80
     scoreDisplay.setScore(0);  // Initialize score to 0
 
     bool running = true;
@@ -125,17 +125,6 @@ std::vector<Litter> litterItems = {
         if (keys[SDL_SCANCODE_LEFT])  sub.x -= 2;
         if (keys[SDL_SCANCODE_RIGHT]) sub.x += 2;
 
-        // Aggiorna il punteggio se viene premuta la barra spaziatrice
-        static bool spaceWasPressed = false;
-        if (keys[SDL_SCANCODE_SPACE]) {
-            if (!spaceWasPressed) {
-                scoreDisplay.setScore(scoreDisplay.getScore() + 10);
-                spaceWasPressed = true;
-            }
-        } else {
-            spaceWasPressed = false;
-        }
-
         // Clamp submarine to screen
         if (sub.x < 50)  sub.x = 50;
         if (sub.x > 650) sub.x = 650;
@@ -145,6 +134,7 @@ std::vector<Litter> litterItems = {
 
 //-------------------- LAURA EDITS --------------------
 
+
 // Check for collisions between submarine and litter
 
 // --- Update litter ---
@@ -152,8 +142,11 @@ for (auto& litter : litterItems) {
     litter.update(); // now handles movement & looping
 
     // Check collision with submarine
-    if (litter.checkCollision(sub)) {
+    // Only increment score if the litter item is currently active (not already collected)
+    if (litter.active && litter.checkCollision(sub)) {
         litter.collect(); // disappears, respawns later
+        // Award 10 points per collected litter
+        scoreDisplay.setScore(scoreDisplay.getScore() + 10);
     }
 }
 
