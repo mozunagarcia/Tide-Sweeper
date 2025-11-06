@@ -102,6 +102,7 @@ std::vector<Litter> litterItems = {
     // Create score display in top-right corner
     ScoreDisplay scoreDisplay(renderer, 650, 10, 140, 80);  // x, y, width, height - increased height to 80
     scoreDisplay.setScore(0);  // Initialize score to 0
+    int currentLevel = scoreDisplay.getLevel();
 
     bool running = true;
     SDL_Event event;
@@ -139,7 +140,12 @@ std::vector<Litter> litterItems = {
 
 // --- Update litter ---
 for (auto& litter : litterItems) {
-    litter.update(); // now handles movement & looping
+    bool missed = litter.update(); // now handles movement & looping; returns true if missed left edge
+
+    // If a litter was missed (reached left edge), decrement score by 10
+    if (missed) {
+        scoreDisplay.setScore(scoreDisplay.getScore() - 10);
+    }
 
     // Check collision with submarine
     // Only increment score if the litter item is currently active (not already collected)
@@ -147,6 +153,21 @@ for (auto& litter : litterItems) {
         litter.collect(); // disappears, respawns later
         // Award 10 points per collected litter
         scoreDisplay.setScore(scoreDisplay.getScore() + 10);
+
+        // If level changed (e.g., reached 100 points -> level 2), update background
+        int newLevel = scoreDisplay.getLevel();
+        if (newLevel != currentLevel) {
+            currentLevel = newLevel;
+            if (currentLevel == 2) {
+                SDL_DestroyTexture(ocean);
+                SDL_Texture* newOcean = loadTexture(renderer, "/Users/saramarcheselli/Desktop/ucr_fall/software engineering/project/Tide-Sweeper/Assets/ocean_background.png");
+                if (newOcean) {
+                    ocean = newOcean;
+                } else {
+                    std::cerr << "Failed to load ocean_background: Assets/ocean_background.png" << std::endl;
+                }
+            }
+        }
     }
 }
 

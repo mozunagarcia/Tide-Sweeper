@@ -17,7 +17,8 @@ public:
         : texture(tex), x(startX), y(startY), speed(moveSpeed), active(true), respawnTimer(0) {}
 
     // Update movement + respawn logic
-    void update() {
+    // Returns true if this litter went off the left edge (missed) and wrapped
+    bool update() {
         if (!active) {
             // Countdown until respawn
             if (respawnTimer > 0) {
@@ -28,7 +29,7 @@ public:
                 x = 850; // respawn just off-screen to the right
                 y = rand() % 500 + 50;
             }
-            return;
+            return false; // no miss while inactive
         }
 
         // Move leftward
@@ -38,7 +39,9 @@ public:
         if (x < -100) {
             x = 850; // loop back to the right
             y = rand() % 500 + 50; // random vertical drift
+            return true; // missed the submarine
         }
+        return false;
     }
 
     // Draw litter if active
