@@ -1,10 +1,12 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_image.h>
+// #include <SDL_ttf.h>  //added this - Laura
 #include <iostream>
 #include <vector> //added this - Laura
 #include "Litter.h"
 #include "ScoreDisplay.hpp"
+#include "Menu.hpp"
 
 // ---------------------------------------------
 // Helper: load an image as an SDL texture
@@ -32,6 +34,14 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+    // --- Initialize SDL_ttf ---
+    if (TTF_Init() == -1) {
+        std::cerr << "SDL_ttf init failed: " << TTF_GetError() << std::endl;
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
 
     // --- Create window + renderer ---
     SDL_Window* window = SDL_CreateWindow(
@@ -54,6 +64,26 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+
+    // -------------------- LAURA EDITS --------------------
+Menu menu(renderer);
+bool running = true;
+bool startGame = false;
+
+// --- MENU LOOP ---
+while (running && !startGame) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        menu.handleEvent(e, running, startGame);
+    }
+
+    menu.render();
+    SDL_RenderPresent(renderer);
+    SDL_Delay(16); // ~60 FPS
+}
+
+// -------------------- END MENU ADDITION --------------------
+
 
     // --- Load textures ---
     SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
@@ -103,7 +133,6 @@ std::vector<Litter> litterItems = {
     ScoreDisplay scoreDisplay(renderer, 650, 10, 140, 50);  // x, y, width, height
     scoreDisplay.setScore(0);  // Initialize score to 0
 
-    bool running = true;
     SDL_Event event;
 
     srand(static_cast<unsigned int>(time(nullptr)));
@@ -228,6 +257,7 @@ SDL_DestroyTexture(beerTex);
     SDL_DestroyTexture(submarine);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    // TTF_Quit(); 
     IMG_Quit();
     SDL_Quit();
     return 0;
