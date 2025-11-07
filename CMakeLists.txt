@@ -72,6 +72,7 @@ endif()
 add_executable(TideSweeper 
     src/main.cpp
     src/ScoreDisplay.cpp
+    src/Menu.cpp 
 )
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
 

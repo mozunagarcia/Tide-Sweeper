@@ -7,6 +7,7 @@
 #include "Litter.h"
 #include "ScoreDisplay.hpp"
 #include "Enemies.h"
+#include "Menu.hpp"
 
 // ---------------------------------------------
 // Helper: load an image as an SDL texture
@@ -66,6 +67,26 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+
+    // -------------------- LAURA EDITS --------------------
+Menu menu(renderer);
+bool running = true;
+bool startGame = false;
+
+// --- MENU LOOP ---
+while (running && !startGame) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e)) {
+        menu.handleEvent(e, running, startGame);
+    }
+
+    menu.render();
+    SDL_RenderPresent(renderer);
+    SDL_Delay(16); // ~60 FPS
+}
+
+// -------------------- END MENU ADDITION --------------------
+
 
     // --- Load textures ---
     SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
@@ -143,6 +164,7 @@ if (!font) {
     // Create score display in top-right corner
     ScoreDisplay scoreDisplay(renderer, 650, 10, 140, 80);  // x, y, width, height - increased height to 80
     scoreDisplay.setScore(0);  // Initialize score to 0
+
     int currentLevel = scoreDisplay.getLevel();
 
 // --- MARI EDITS ---
@@ -155,7 +177,6 @@ if (!font) {
         scoreDisplay.setScore(0);
     };
 
-    bool running = true;
     SDL_Event event;
 
     srand(static_cast<unsigned int>(time(nullptr)));
