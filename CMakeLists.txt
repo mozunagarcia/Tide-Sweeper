@@ -3,6 +3,9 @@ project(TideSweeper LANGUAGES CXX) #ADDED THIS - Laura
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Add include directory for the project
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
 if (WIN32)
     # --- Windows ---
     set(SDL2_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32")
@@ -13,7 +16,6 @@ if (WIN32)
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
-        include_directories(${CMAKE_SOURCE_DIR}/include)
     )
     link_directories(
         ${SDL2_DIR}/lib
