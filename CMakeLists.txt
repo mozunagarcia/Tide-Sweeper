@@ -13,6 +13,7 @@ if (WIN32)
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
+        include_directories(${CMAKE_SOURCE_DIR}/include)
     )
     link_directories(
         ${SDL2_DIR}/lib
@@ -72,9 +73,9 @@ add_executable(TideSweeper
 )
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
 
-# Copy assets automatically
-set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/assets")
-set(ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/assets")
+# Copy assets automatically (use project 'Assets' directory)
+set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/Assets")
+set(ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/Assets")
 add_custom_command(TARGET TideSweeper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_DEST_DIR}"
