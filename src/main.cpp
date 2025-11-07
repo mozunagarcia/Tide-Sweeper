@@ -222,7 +222,7 @@ for (auto& litter : litterItems) {
             currentLevel = newLevel;
             if (currentLevel == 2) {
                 SDL_DestroyTexture(ocean);
-                SDL_Texture* newOcean = loadTexture(renderer, "/Users/saramarcheselli/Desktop/ucr_fall/software engineering/project/Tide-Sweeper/Assets/ocean_background.png");
+                SDL_Texture* newOcean = loadTexture(renderer, "/Assets/ocean_background.png");
                 if (newOcean) {
                     ocean = newOcean;
                 } else {
