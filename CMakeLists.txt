@@ -73,6 +73,13 @@ add_executable(TideSweeper
     src/main.cpp
     src/ScoreDisplay.cpp
     src/Menu.cpp 
+    src/GameManager.cpp
+    src/Submarine.cpp
+    src/Level.cpp
+    src/Litter.cpp
+    src/Enemies.cpp
+    src/Scoreboard.cpp
+    src/Messages.cpp
 )
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
 

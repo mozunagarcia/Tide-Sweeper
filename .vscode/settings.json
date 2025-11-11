@@ -6,6 +6,14 @@
     // Optional: show CMake Tools status bar
     "cmake.showOptionsButton": true,
     "cmake.showBuildTargetName": true,
+
+    // Tell IntelliSense to use CMake's compile commands for includes and flags
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+
+    // Optional: disable or control red squiggles
+    // Set to "Disabled" if you want to hide them completely
+    "C_Cpp.errorSquiggles": "enabled",
+
     "files.associations": {
         "atomic": "cpp",
         "bit": "cpp",
