@@ -145,7 +145,7 @@ void GameManager::run() {
 
             // Update level (handles litter/enemies)
             level->update(*submarine, *scoreboard, lives, gameOver);
-            // Detect level changes and swap background when reaching level 2
+            // Detect level changes and swap background when reaching level 2 or 3
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
@@ -159,6 +159,17 @@ void GameManager::run() {
                             SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
                             if (altOcean) ocean = altOcean;
                             else std::cerr << "Failed to load ocean_background: Assets/ocean_background.png" << std::endl;
+                        }
+                    }
+                    else if (currentLevel == 3) {
+                        SDL_DestroyTexture(ocean);
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
+                        if (newOcean) {
+                            ocean = newOcean;
+                        } else {
+                            SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
+                            if (altOcean) ocean = altOcean;
+                            else std::cerr << "Failed to load ocean3.png: Assets/ocean3.png" << std::endl;
                         }
                     }
                 }
