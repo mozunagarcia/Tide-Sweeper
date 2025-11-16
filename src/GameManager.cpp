@@ -110,6 +110,11 @@ void GameManager::run() {
         submarine->setPosition(200, 275);
         level->reset();
         scoreboard->setScore(0);
+        scoreboard->resetLevel();
+        cameraX = 0.0f;
+        currentLevel = 1;
+        SDL_DestroyTexture(ocean);
+        ocean = loadTexture(renderer, "Assets/ocean.png");
     };
 
     SDL_Event event;

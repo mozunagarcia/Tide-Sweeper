@@ -13,7 +13,10 @@ class ScoreDisplay {
         void render();
         void setScore(int newScore);
         int getScore() const;
-        int getLevel() const;    private:
+        int getLevel() const;
+        void resetLevel();
+        
+    private:
         SDL_Renderer* renderer;
         SDL_Rect scoreRect;
         int score;

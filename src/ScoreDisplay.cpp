@@ -158,3 +158,8 @@ void ScoreDisplay::renderLevel() {
 int ScoreDisplay::getLevel() const {
     return level;
 }
+
+void ScoreDisplay::resetLevel() {
+    level = 1;
+    updateLevelTexture();
+}
