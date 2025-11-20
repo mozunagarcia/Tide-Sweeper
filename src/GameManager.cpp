@@ -77,6 +77,7 @@ void GameManager::run() {
     std::vector<float> enemySpeeds = { 4.0f, 3.8f, 3.5f, 4.2f };
 
     SDL_Texture* heartTex = loadTexture(renderer, "Assets/heart.png");
+    SDL_Texture* oilTex = loadTexture(renderer, "Assets/oil.png");
 
     // Scoreboard
     scoreboard = new Scoreboard(renderer, 650, 10, 140, 80);
@@ -89,6 +90,9 @@ void GameManager::run() {
     level = new Level(renderer,
                       { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                       enemyTextures, enemySpeeds);
+    
+    // Set oil texture for level 3 blackout effect
+    level->setOilTexture(oilTex);
 
     // Messages (currently minimal)
     messages = new Messages(renderer);
@@ -143,8 +147,9 @@ void GameManager::run() {
 
             submarine->clamp(50, 650, 0, 540);
 
-            // Update level (handles litter/enemies)
-            level->update(*submarine, *scoreboard, lives, gameOver);
+            // Update level (handles litter/enemies and level 3 blackout)
+            level->update(*submarine, *scoreboard, lives, gameOver, currentLevel);
+            
             // Detect level changes and swap background when reaching level 2 or 3
             {
                 int newLevel = scoreboard->getLevel();
@@ -162,6 +167,7 @@ void GameManager::run() {
                         }
                     }
                     else if (currentLevel == 3) {
+                        
                         SDL_DestroyTexture(ocean);
                         SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
                         if (newOcean) {
@@ -192,6 +198,10 @@ void GameManager::run() {
 
         level->render();
         submarine->render(renderer);
+        
+        // Level 3: Render blackout effects (oil spots and blackout overlay)
+        level->renderBlackoutEffects(currentLevel, *submarine);
+        
         scoreboard->render();
 
         // Draw hearts
@@ -252,6 +262,7 @@ void GameManager::run() {
     SDL_DestroyTexture(octopusTexture);
     SDL_DestroyTexture(anglerTexture);
     SDL_DestroyTexture(heartTex);
+    SDL_DestroyTexture(oilTex);
     SDL_DestroyTexture(ocean);
     // submarine texture is owned by Submarine and will be destroyed there
 }
