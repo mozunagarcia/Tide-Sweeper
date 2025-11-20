@@ -58,8 +58,12 @@ void ScoreDisplay::render() {
 void ScoreDisplay::setScore(int newScore) {
     if (score != newScore) {
         score = newScore;
-        // Update level if score reaches 100
-        if (score >= 100 && level == 1) {
+        // Update level if score reaches thresholds
+        if (score >= 200 && level == 2) {
+            level = 3;
+            updateLevelTexture();
+        }
+        else if (score >= 100 && level == 1) {
             level = 2;
             updateLevelTexture();
         }
@@ -157,4 +161,9 @@ void ScoreDisplay::renderLevel() {
 
 int ScoreDisplay::getLevel() const {
     return level;
+}
+
+void ScoreDisplay::resetLevel() {
+    level = 1;
+    updateLevelTexture();
 }

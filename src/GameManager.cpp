@@ -107,6 +107,7 @@ void GameManager::run() {
     std::vector<int> enemyHeights = { 50, 30, 60, 55, 40 };   // Swordfish, Eel, Octopus, Angler, Shark heights
 
     SDL_Texture* heartTex = loadTexture(renderer, "Assets/heart.png");
+    SDL_Texture* oilTex = loadTexture(renderer, "Assets/oil.png");
 
     // Scoreboard
     scoreboard = new Scoreboard(renderer, 650, 10, 140, 80);
@@ -119,6 +120,9 @@ void GameManager::run() {
     level = new Level(renderer,
                       { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                       enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+    
+    // Set oil texture for level 3 blackout effect
+    level->setOilTexture(oilTex);
 
     // Messages (currently minimal)
     messages = new Messages(renderer);
@@ -140,6 +144,11 @@ void GameManager::run() {
         submarine->setPosition(200, 275);
         level->reset();
         scoreboard->setScore(0);
+        scoreboard->resetLevel();
+        cameraX = 0.0f;
+        currentLevel = 1;
+        SDL_DestroyTexture(ocean);
+        ocean = loadTexture(renderer, "Assets/ocean.png");
     };
 
     SDL_Event event;
@@ -179,9 +188,13 @@ void GameManager::run() {
             // Update submarine blink effect
             submarine->updateBlink();
 
-            // Update level (handles litter/enemies)
-            level->update(*submarine, *scoreboard, lives, gameOver);
-            // Detect level changes and swap background when reaching level 2
+            // Update submarine blink effect
+            submarine->updateBlink();
+
+            // Update level (handles litter/enemies and level 3 blackout)
+            level->update(*submarine, *scoreboard, lives, gameOver, currentLevel);
+            
+            // Detect level changes and swap background when reaching level 2 or 3
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
@@ -195,6 +208,18 @@ void GameManager::run() {
                             SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
                             if (altOcean) ocean = altOcean;
                             else std::cerr << "Failed to load ocean_background: Assets/ocean_background.png" << std::endl;
+                        }
+                    }
+                    else if (currentLevel == 3) {
+                        
+                        SDL_DestroyTexture(ocean);
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
+                        if (newOcean) {
+                            ocean = newOcean;
+                        } else {
+                            SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
+                            if (altOcean) ocean = altOcean;
+                            else std::cerr << "Failed to load ocean3.png: Assets/ocean3.png" << std::endl;
                         }
                     }
                 }
@@ -217,6 +242,10 @@ void GameManager::run() {
 
         level->render();
         submarine->render(renderer);
+        
+        // Level 3: Render blackout effects (oil spots and blackout overlay)
+        level->renderBlackoutEffects(currentLevel, *submarine);
+        
         scoreboard->render();
 
         // Draw hearts
@@ -279,6 +308,7 @@ void GameManager::run() {
     SDL_DestroyTexture(anglerTexture);
     SDL_DestroyTexture(sharkTexture);
     SDL_DestroyTexture(heartTex);
+    SDL_DestroyTexture(oilTex);
     SDL_DestroyTexture(ocean);
     // submarine texture is owned by Submarine and will be destroyed there
 }
