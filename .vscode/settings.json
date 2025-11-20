@@ -72,6 +72,20 @@
         "xmemory": "cpp",
         "xstring": "cpp",
         "xtr1common": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "__bit_reference": "cpp",
+        "__locale": "cpp",
+        "__verbose_abort": "cpp",
+        "array": "cpp",
+        "bitset": "cpp",
+        "cstdarg": "cpp",
+        "cwctype": "cpp",
+        "deque": "cpp",
+        "mutex": "cpp",
+        "print": "cpp",
+        "queue": "cpp",
+        "stack": "cpp",
+        "string_view": "cpp",
+        "variant": "cpp"
     }
 }
