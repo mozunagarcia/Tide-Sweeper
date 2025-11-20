@@ -1,5 +1,7 @@
 #pragma once
 #include <SDL.h>
+#include <vector>
+
 #include "Level.h"
 #include "Submarine.h"
 #include "Scoreboard.h"
@@ -13,6 +15,7 @@ public:
 
     // Runs the main game loop; returns when the program should exit
     void run();
+    bool isRunning() const { return running; }
 
 private:
     SDL_Window* window;
@@ -21,7 +24,10 @@ private:
     Submarine* submarine;
     Scoreboard* scoreboard;
     Messages* messages;
+    Messages* msgManager;   // Story/message system
     Menu* menu;
     bool running;
     bool startGame;
+
+    std::vector<std::string> facts;   // Fact strings used in pause + game over
 };

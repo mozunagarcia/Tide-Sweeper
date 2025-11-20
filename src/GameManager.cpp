@@ -5,6 +5,12 @@
 #include <iostream>
 #include "Litter.h"
 #include "Enemies.h"
+// ----- EDIT START -----
+#include "GameOverScreen.h"
+#include "Messages.h" 
+
+//#include "ClueScreen.h"
+// ----- EDIT END -----
 
 // Helper to load textures (copied from original main)
 static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
@@ -23,6 +29,19 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
 {
     // Create menu 
     menu = new Menu(renderer);
+    
+// ----- EDIT START -----
+    // Initialize upgraded Messages system
+    msgManager = new Messages(renderer);
+
+    facts = {
+    "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
+    "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
+    "Ghost nets make up a major part of ocean plastic and trap animals for years.",
+    "Illegal dumping harms marine life and destroys fragile ecosystems."
+};
+// ----- EDIT END -----
+
 
     // We'll initialize game objects when entering the gameplay loop inside run()
 }
@@ -32,6 +51,7 @@ GameManager::~GameManager() {
     delete submarine;
     delete scoreboard;
     delete messages;
+    delete msgManager;
     delete menu;
 }
 
@@ -48,7 +68,37 @@ void GameManager::run() {
         SDL_Delay(16); // ~60 FPS
     }
 
+//--- edit---
+    // Start-of-level 1 transition messages
+std::vector<std::string> level1Start = {
+    "Entering Zone: Coastal Trash Vortex",
+    // "This storm is small, but don't underestimate it. Use this mission to get a feel for maneuvering in circular debris flow."
+};
+
+// Mid-level milestone messages (triggered every 30 points)
+std::vector<std::string> level1Milestones = {
+    "Trash currents detected. Move carefully.",
+    "Animal signature nearby - avoid contact.",
+    "Good work - debris density increasing ahead."
+};
+int level1MilestoneIndex = 0;
+
+// End-of-level transition (shown when Level 2 begins)
+std::string level1End = "Storm dispersing... nice job out there.";
+
+// First time threshold for point-based messages
+int nextMessageScore = 30;
+
+//--- edit---
+
     if (!running) return;
+
+    // ----- EDIT START -----
+msgManager->loadMessageList(level1Start);
+msgManager->start();
+
+// ----- EDIT END -----
+
 
     // --- Load shared textures --- (paths kept identical to original)
     SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
@@ -118,15 +168,41 @@ void GameManager::run() {
     // Main loop
     while (running) {
         while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = false;
-            }
-            else if (event.type == SDL_KEYDOWN && gameOver) {
-                if (event.key.keysym.sym == SDLK_r) {
-                    resetGame();
-                }
-            }
+    if (event.type == SDL_QUIT) {
+        running = false;
+    }
+
+    // ----- PAUSE MENU (ESC) -----
+    if (!gameOver && event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
+
+        GameOverScreen pause(renderer);
+
+        int factIndex = currentLevel - 1;
+        if (factIndex < 0) factIndex = 0;
+        if (factIndex >= facts.size()) factIndex = facts.size() - 1;
+
+        // Title is different for pause!
+        std::string action = pause.run("Paused", facts);
+
+        if (action == "resume") {
+    continue;
+}
+
+        if (action == "restart") {
+            resetGame();
+            continue;
         }
+        if (action == "menu") {
+            resetGame();
+            startGame = false;
+            return;   // go back to main menu
+        }
+        if (action == "exit") {
+            running = false;
+            break;
+        }
+    }
+}
 
         if (!gameOver) {
             // Keyboard input
@@ -140,12 +216,30 @@ void GameManager::run() {
 
             // Update level (handles litter/enemies)
             level->update(*submarine, *scoreboard, lives, gameOver);
+            // ----- EDIT START -----
+if (scoreboard->getLevel() == 1) {
+    int currentScore = scoreboard->getScore();
+
+    if (currentScore >= nextMessageScore) {
+        if (level1MilestoneIndex < level1Milestones.size()) {
+            msgManager->loadMessageList({ level1Milestones[level1MilestoneIndex] });
+            msgManager->start();
+            level1MilestoneIndex++;
+        }
+        nextMessageScore += 30;  // Next milestone = +30 points
+    }
+}
+// ----- EDIT END -----
             // Detect level changes and swap background when reaching level 2
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
                     currentLevel = newLevel;
                     if (currentLevel == 2) {
+                        // ----- EDIT START -----
+                        msgManager->loadMessageList({ level1End });
+                        msgManager->start();
+// ----- EDIT END -----
                         SDL_DestroyTexture(ocean);
                         SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
                         if (newOcean) {
@@ -188,37 +282,32 @@ void GameManager::run() {
             if (heartTex) SDL_RenderCopy(renderer, heartTex, nullptr, &heartRect);
         }
 
-        // Game over overlay
-        if (gameOver) {
-            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 192);
-            SDL_Rect overlay = {0, 0, bgWidth, bgHeight};
-            SDL_RenderFillRect(renderer, &overlay);
+// ----- EDIT START ----
+if (gameOver) {
+    GameOverScreen go(renderer);
 
-            // Render game over text
-            TTF_Font* font = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 36);
-            if (font) {
-                SDL_Color textColor = {255,255,255,255};
-                SDL_Surface* gameOverSurf = TTF_RenderText_Solid(font, "Game Over!", textColor);
-                SDL_Surface* restartSurf = TTF_RenderText_Solid(font, "Press R to Restart", textColor);
-                if (gameOverSurf && restartSurf) {
-                    SDL_Texture* gameOverTex = SDL_CreateTextureFromSurface(renderer, gameOverSurf);
-                    SDL_Texture* restartTex = SDL_CreateTextureFromSurface(renderer, restartSurf);
-                    if (gameOverTex && restartTex) {
-                        SDL_Rect gameOverRect = { (bgWidth - gameOverSurf->w) / 2, (bgHeight - gameOverSurf->h) / 2 - 30, gameOverSurf->w, gameOverSurf->h };
-                        SDL_Rect restartRect = { (bgWidth - restartSurf->w) / 2, (bgHeight - restartSurf->h) / 2 + 30, restartSurf->w, restartSurf->h };
-                        SDL_RenderCopy(renderer, gameOverTex, NULL, &gameOverRect);
-                        SDL_RenderCopy(renderer, restartTex, NULL, &restartRect);
-                        SDL_DestroyTexture(gameOverTex);
-                        SDL_DestroyTexture(restartTex);
-                    }
-                    SDL_FreeSurface(gameOverSurf);
-                    SDL_FreeSurface(restartSurf);
-                }
-                TTF_CloseFont(font);
-            }
-        }
+    std::string result = go.run("Game Over!", facts);
 
+    if (result == "restart") {
+        resetGame();
+        continue;
+    }
+    if (result == "menu") {
+        resetGame();
+        startGame = false;
+        return;
+    }
+    if (result == "exit") {
+        running = false;
+        break;
+    }
+}
+
+// Render level story messages
+msgManager->update();
+msgManager->render();
+
+// ----- EDIT END -----
         SDL_RenderPresent(renderer);
         SDL_Delay(16);
     }

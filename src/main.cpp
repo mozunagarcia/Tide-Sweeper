@@ -87,9 +87,14 @@ int main(int argc, char* argv[]) {
     }
 
     // Run the game
-    {
+bool keepRunning = true;
+
+    while (keepRunning) {
         GameManager game(window, renderer);
         game.run();
+
+        // If GameManager ended because player clicked Exit:
+        keepRunning = game.isRunning();  
     }
 
     // Cleanup (SDLInitializer handles subsystem cleanup)

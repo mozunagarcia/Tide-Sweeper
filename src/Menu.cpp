@@ -59,28 +59,48 @@ void Menu::handleEvent(const SDL_Event& e, bool& running, bool& startGame) {
     }
 
     // Handle mouse movement
-    if (e.type == SDL_MOUSEMOTION) {
-        int x = e.motion.x;
-        int y = e.motion.y;
-        hoveredIndex = -1; // default to none
+if (e.type == SDL_MOUSEMOTION) {
+    int mx = e.motion.x;
+    int my = e.motion.y;
+    hoveredIndex = -1;
 
-        // Check if mouse is over any menu item
-        for (int i = 0; i < items.size(); ++i) {
+    const int buttonSpacing = 110;
+    const int paddingX = 25;
+    const int paddingY = 15;
 
-            int totalMenuHeight = static_cast<int>(items.size()) * 80;
-            int startY = (WINDOW_HEIGHT - totalMenuHeight) / 2;
-            int itemY = startY + i * 80;
-            int itemX = (WINDOW_WIDTH / 2) - 150;
+    int totalMenuHeight = static_cast<int>(items.size()) * buttonSpacing;
+    int startY = (WINDOW_HEIGHT - totalMenuHeight) / 2;
 
-            int itemW = 300;
-            int itemH = 60;
+    for (int i = 0; i < items.size(); i++) {
 
-            if (x >= itemX && x <= itemX + itemW && y >= itemY && y <= itemY + itemH) {
-                hoveredIndex = i;
-                break;
-            }
+        // Measure text
+        SDL_Surface* textSurface = TTF_RenderText_Blended(font, items[i].c_str(),
+                                                          {255,255,255,255});
+        int textW = textSurface->w;
+        int textH = textSurface->h;
+        SDL_FreeSurface(textSurface);
+
+        // Compute EXACT SAME RECT used in renderMainMenu()
+        int xPos = (WINDOW_WIDTH - textW) / 2;
+        int yPos = startY + i * buttonSpacing;
+
+        SDL_Rect buttonRect = {
+            xPos - paddingX,
+            yPos - paddingY,
+            textW + paddingX * 2,
+            textH + paddingY * 2
+        };
+
+        // Hover check
+        if (mx >= buttonRect.x && mx <= buttonRect.x + buttonRect.w &&
+            my >= buttonRect.y && my <= buttonRect.y + buttonRect.h)
+        {
+            hoveredIndex = i;
+            break;
         }
     }
+}
+
 
     // Handle mouse clicks
     if (e.type == SDL_MOUSEBUTTONDOWN) {
