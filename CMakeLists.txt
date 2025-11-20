@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.16)
-project(TideSweeper LANGUAGES CXX) #ADDED THIS - Laura
+project(TideSweeper LANGUAGES CXX)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Add include directory for the project
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+# WINDOWS (MinGW)
 if (WIN32)
-    # --- Windows ---
+
     set(SDL2_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32")
     set(SDL2_IMAGE_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_image-2.8.2/x86_64-w64-mingw32")
     set(SDL2_TTF_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_ttf-2.24.0/x86_64-w64-mingw32")
@@ -17,8 +18,9 @@ if (WIN32)
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
-        ${SDL2_MIXER_DIR}/include/SDL2
+        ${SDL2_MIXER_DIR}/include     # ← FIXED HERE
     )
+
     link_directories(
         ${SDL2_DIR}/lib
         ${SDL2_IMAGE_DIR}/lib
@@ -26,53 +28,68 @@ if (WIN32)
         ${SDL2_MIXER_DIR}/lib
     )
 
-    set(EXTRA_LIBS mingw32
+    set(EXTRA_LIBS
+        mingw32
         SDL2main
         SDL2
         SDL2_image
         SDL2_ttf
-        SDL2_mixer)
+        SDL2_mixer
+    )
 
 
+# macOS (Homebrew)
 elseif (APPLE)
-    # --- macOS ---
-    # Locate SDL2 and SDL2_image via Homebrew (works for both Intel and Apple Silicon)
+
     set(SDL2_PREFIX "/opt/homebrew/opt/sdl2")
     set(SDL2_IMAGE_PREFIX "/opt/homebrew/opt/sdl2_image")
     set(SDL2_TTF_PREFIX "/opt/homebrew/opt/sdl2_ttf")
-
-    # Fall back to /usr/local for Intel Macs
-    if(NOT EXISTS "${SDL2_PREFIX}")
-        set(SDL2_PREFIX "/usr/local/opt/sdl2")
-    endif()
-    if(NOT EXISTS "${SDL2_IMAGE_PREFIX}")
-        set(SDL2_IMAGE_PREFIX "/usr/local/opt/sdl2_image")
-    endif()
-    if(NOT EXISTS "${SDL2_TTF_PREFIX}")
-        set(SDL2_TTF_PREFIX "/usr/local/opt/sdl2_ttf")
-    endif()
+    set(SDL2_MIXER_PREFIX "/opt/homebrew/opt/sdl2_mixer")
 
     include_directories(
         ${SDL2_PREFIX}/include/SDL2
         ${SDL2_IMAGE_PREFIX}/include/SDL2
         ${SDL2_TTF_PREFIX}/include/SDL2
+        ${SDL2_MIXER_PREFIX}/include/SDL2
     )
+
     link_directories(
         ${SDL2_PREFIX}/lib
         ${SDL2_IMAGE_PREFIX}/lib
         ${SDL2_TTF_PREFIX}/lib
+        ${SDL2_MIXER_PREFIX}/lib
     )
 
-    set(EXTRA_LIBS SDL2 SDL2_image SDL2_ttf)
+    set(EXTRA_LIBS
+        SDL2
+        SDL2_image
+        SDL2_ttf
+        SDL2_mixer
+    )
 
+# Linux
 else()
-    # --- Linux / others ---
     find_package(SDL2 REQUIRED)
     find_package(SDL2_image REQUIRED)
-    include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
-    set(EXTRA_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES})
+    find_package(SDL2_ttf REQUIRED)
+    find_package(SDL2_mixer REQUIRED)
+
+    include_directories(
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2_IMAGE_INCLUDE_DIRS}
+        ${SDL2_TTF_INCLUDE_DIRS}
+        ${SDL2_MIXER_INCLUDE_DIRS}
+    )
+
+    set(EXTRA_LIBS
+        ${SDL2_LIBRARIES}
+        ${SDL2_IMAGE_LIBRARIES}
+        ${SDL2_TTF_LIBRARIES}
+        ${SDL2_MIXER_LIBRARIES}
+    )
 endif()
 
+# Build
 add_executable(TideSweeper 
     src/main.cpp
     src/ScoreDisplay.cpp
@@ -85,15 +102,13 @@ add_executable(TideSweeper
     src/Scoreboard.cpp
     src/Messages.cpp
 )
+
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
 
-# Copy assets automatically (use project 'Assets' directory)
+# Copy assets
 set(ASSETS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/Assets")
 set(ASSETS_DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/Assets")
 add_custom_command(TARGET TideSweeper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_DEST_DIR}"
 )
-
-#add_executable(CollisionTest Tests/CollisionTest.cpp)
-#target_link_libraries(CollisionTest ${EXTRA_LIBS})
