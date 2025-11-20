@@ -18,7 +18,7 @@ if (WIN32)
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
-        ${SDL2_MIXER_DIR}/include     # ← FIXED HERE
+        ${SDL2_MIXER_DIR}/include/SDL2     # ← FIXED HERE
     )
 
     link_directories(
