@@ -10,10 +10,31 @@ Menu::Menu(SDL_Renderer* renderer)
       font(nullptr),
       menuBackgroundTexture(nullptr),
       instructionsBackgroundTexture(nullptr),
+      menuMusic(nullptr),
       selectedIndex(0),
       showInstructions(false),
       hoveredIndex(-1)
 {
+    // Initialize SDL_mixer for menu music
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        std::cerr << "SDL_mixer could not initialize! Mix_Error: " << Mix_GetError() << std::endl;
+    } else {
+        // Load menu background music
+        menuMusic = Mix_LoadMUS("Assets/music/background_music.mp3");
+        if (!menuMusic) {
+            menuMusic = Mix_LoadMUS("Assets/music/background_music.wav");
+            if (!menuMusic) {
+                std::cerr << "Failed to load menu music! Mix_Error: " << Mix_GetError() << std::endl;
+            }
+        }
+        
+        // Play menu music on loop
+        if (menuMusic) {
+            Mix_PlayMusic(menuMusic, -1);
+            Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+        }
+    }
+    
     // --- Load font ---
     font = TTF_OpenFont("assets/fonts/OpenSans.ttf", 48);
     if (!font) {
@@ -48,7 +69,13 @@ Menu::~Menu() {
     if (menuBackgroundTexture) SDL_DestroyTexture(menuBackgroundTexture);
     if (instructionsBackgroundTexture) SDL_DestroyTexture(instructionsBackgroundTexture);
     if (font) TTF_CloseFont(font);
-
+    
+    // Stop and free menu music
+    if (menuMusic) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(menuMusic);
+        menuMusic = nullptr;
+    }
 }
 
 // Handle clicks & quit events

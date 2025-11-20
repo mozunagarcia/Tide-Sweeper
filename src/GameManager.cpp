@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <iostream>
 #include "Litter.h"
 #include "Enemies.h"
@@ -19,7 +20,7 @@ static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
 }
 
 GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
-    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false)
+    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr)
 {
     // Create menu 
     menu = new Menu(renderer);
@@ -33,6 +34,13 @@ GameManager::~GameManager() {
     delete scoreboard;
     delete messages;
     delete menu;
+    
+    // Stop and free music
+    if (backgroundMusic) {
+        Mix_HaltMusic();
+        Mix_FreeMusic(backgroundMusic);
+        backgroundMusic = nullptr;
+    }
 }
 
 void GameManager::run() {
@@ -49,6 +57,25 @@ void GameManager::run() {
     }
 
     if (!running) return;
+
+    // Stop menu music and load game music
+    Mix_HaltMusic();
+    
+    // Load game background music
+    backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.mp3");
+    if (!backgroundMusic) {
+        // Try .wav if .mp3 doesn't exist
+        backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.wav");
+        if (!backgroundMusic) {
+            std::cerr << "Failed to load game music! Mix_Error: " << Mix_GetError() << std::endl;
+        }
+    }
+    
+    // Play game music on loop (-1 means infinite loop)
+    if (backgroundMusic) {
+        Mix_PlayMusic(backgroundMusic, -1);
+        Mix_VolumeMusic(MIX_MAX_VOLUME / 2); // Set to 50% volume
+    }
 
     // --- Load shared textures --- (paths kept identical to original)
     SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
@@ -72,9 +99,12 @@ void GameManager::run() {
     SDL_Texture* eelTexture = loadTexture(renderer, "Assets/Eel.png");
     SDL_Texture* octopusTexture = loadTexture(renderer, "Assets/Octopus.png");
     SDL_Texture* anglerTexture = loadTexture(renderer, "Assets/Angler.png");
+    SDL_Texture* sharkTexture = loadTexture(renderer, "Assets/Shark.png");
 
-    std::vector<SDL_Texture*> enemyTextures = { swordfishTexture, eelTexture, octopusTexture, anglerTexture };
-    std::vector<float> enemySpeeds = { 4.0f, 3.8f, 3.5f, 4.2f };
+    std::vector<SDL_Texture*> enemyTextures = { swordfishTexture, eelTexture, octopusTexture, anglerTexture, sharkTexture };
+    std::vector<float> enemySpeeds = { 4.0f, 3.8f, 3.5f, 4.2f, 4.5f };
+    std::vector<int> enemyWidths = { 70, 70, 60, 60, 60 };    // Swordfish, Eel, Octopus, Angler, Shark widths
+    std::vector<int> enemyHeights = { 50, 30, 60, 55, 40 };   // Swordfish, Eel, Octopus, Angler, Shark heights
 
     SDL_Texture* heartTex = loadTexture(renderer, "Assets/heart.png");
 
@@ -88,7 +118,7 @@ void GameManager::run() {
     // Level: pass litter + enemy textures
     level = new Level(renderer,
                       { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
-                      enemyTextures, enemySpeeds);
+                      enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
 
     // Messages (currently minimal)
     messages = new Messages(renderer);
@@ -135,8 +165,19 @@ void GameManager::run() {
             if (keys[SDL_SCANCODE_DOWN])  submarine->moveBy(0, 5);
             if (keys[SDL_SCANCODE_LEFT])  submarine->moveBy(-5, 0);
             if (keys[SDL_SCANCODE_RIGHT]) submarine->moveBy(5, 0);
+            
+            // Calm ability with SPACE (prevents enemy from attacking when chasing is activated)
+            if (keys[SDL_SCANCODE_SPACE]) {
+                SDL_Rect subRect = submarine->getRect();
+                float subX = subRect.x + subRect.w / 2.0f;
+                float subY = subRect.y + subRect.h / 2.0f;
+                level->calmEnemies(subX, subY, 150.0f);  // 150 pixel radius
+            }
 
             submarine->clamp(50, 650, 0, 540);
+
+            // Update submarine blink effect
+            submarine->updateBlink();
 
             // Update level (handles litter/enemies)
             level->update(*submarine, *scoreboard, lives, gameOver);
@@ -179,12 +220,13 @@ void GameManager::run() {
         scoreboard->render();
 
         // Draw hearts
-        int heartSize = 70;
-        int16_t spacing = -20;
+        int heartSizeX = 40;
+        int heartSizeY = 35;
+        int16_t spacing = 5;
         int startX = 5;
         int startY = 5;
         for (int i = 0; i < lives; ++i) {
-            SDL_Rect heartRect = { startX + i * (heartSize + spacing), startY, heartSize, heartSize };
+            SDL_Rect heartRect = { startX + i * (heartSizeX + spacing), startY, heartSizeX, heartSizeY };
             if (heartTex) SDL_RenderCopy(renderer, heartTex, nullptr, &heartRect);
         }
 
@@ -235,6 +277,7 @@ void GameManager::run() {
     SDL_DestroyTexture(eelTexture);
     SDL_DestroyTexture(octopusTexture);
     SDL_DestroyTexture(anglerTexture);
+    SDL_DestroyTexture(sharkTexture);
     SDL_DestroyTexture(heartTex);
     SDL_DestroyTexture(ocean);
     // submarine texture is owned by Submarine and will be destroyed there

@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -19,7 +20,7 @@ private:
     TTF_Font* font;
     SDL_Texture* menuBackgroundTexture;
     SDL_Texture* instructionsBackgroundTexture;
-
+    Mix_Music* menuMusic;
 
     int selectedIndex; // for keyboard navigation
     int hoveredIndex; 

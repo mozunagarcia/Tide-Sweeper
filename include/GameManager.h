@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include "Level.h"
 #include "Submarine.h"
 #include "Scoreboard.h"
@@ -24,4 +25,5 @@ private:
     Menu* menu;
     bool running;
     bool startGame;
+    Mix_Music* backgroundMusic;
 };

@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <iostream>
 #include <memory>
 #include "GameManager.h"
@@ -12,7 +13,7 @@ namespace {
         bool success = true;
 
         SDLInitializer() {
-            if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+            if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
                 std::cerr << "SDL init failed: " << SDL_GetError() << std::endl;
                 success = false;
                 return;
@@ -35,6 +36,7 @@ namespace {
         }
 
         ~SDLInitializer() {
+            Mix_CloseAudio();
             TTF_Quit();
             IMG_Quit();
             SDL_Quit();
@@ -46,7 +48,7 @@ namespace {
         SDL_Window* window = SDL_CreateWindow(
             "Tide Sweeper",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            800, 600, SDL_WINDOW_SHOWN);
+            800, 600, SDL_WINDOW_SHOWN); //can add full sceen but will need to change some of the rendering logic to handle different resolutions
 
         if (!window) {
             std::cerr << "Window creation failed: " << SDL_GetError() << std::endl;

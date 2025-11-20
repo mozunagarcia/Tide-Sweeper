@@ -11,23 +11,27 @@ if (WIN32)
     set(SDL2_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32")
     set(SDL2_IMAGE_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_image-2.8.2/x86_64-w64-mingw32")
     set(SDL2_TTF_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_ttf-2.24.0/x86_64-w64-mingw32")
+    set(SDL2_MIXER_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_mixer-2.8.1/x86_64-w64-mingw32")
 
     include_directories(
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
+        ${SDL2_MIXER_DIR}/include/SDL2
     )
     link_directories(
         ${SDL2_DIR}/lib
         ${SDL2_IMAGE_DIR}/lib
         ${SDL2_TTF_DIR}/lib
+        ${SDL2_MIXER_DIR}/lib
     )
 
     set(EXTRA_LIBS mingw32
         SDL2main
         SDL2
         SDL2_image
-        SDL2_ttf)
+        SDL2_ttf
+        SDL2_mixer)
 
 
 elseif (APPLE)
@@ -91,5 +95,5 @@ add_custom_command(TARGET TideSweeper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_DEST_DIR}"
 )
 
-add_executable(CollisionTest Tests/CollisionTest.cpp)
-target_link_libraries(CollisionTest ${EXTRA_LIBS})
+#add_executable(CollisionTest Tests/CollisionTest.cpp)
+#target_link_libraries(CollisionTest ${EXTRA_LIBS})

@@ -11,8 +11,12 @@ public:
     void clamp(int minX, int maxX, int minY, int maxY);
     void render(SDL_Renderer* renderer);
     SDL_Rect getRect() const;
+    void startHitBlink();  
+    void updateBlink();    
 
 private:
     SDL_Texture* texture;
     SDL_Rect rect;
+    int hitBlinkTimer = 0;  
+    bool facingRight = true;  
 };

@@ -3,10 +3,13 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <cmath>
 
 Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTextures,
-             const std::vector<SDL_Texture*>& enemyTextures_, const std::vector<float>& enemySpeeds_)
-    : renderer(renderer_), enemyTextures(enemyTextures_), enemySpeeds(enemySpeeds_), spawnTimer(0)
+             const std::vector<SDL_Texture*>& enemyTextures_, const std::vector<float>& enemySpeeds_,
+             const std::vector<int>& enemyWidths_, const std::vector<int>& enemyHeights_)
+    : renderer(renderer_), enemyTextures(enemyTextures_), enemySpeeds(enemySpeeds_), 
+      enemyWidths(enemyWidths_), enemyHeights(enemyHeights_), spawnTimer(0)
 {
     // Create litter from provided textures using the original initial positions/speeds
     // If there are fewer textures than expected, fall back to a simple spawn pattern
@@ -62,20 +65,28 @@ void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, boo
             int randomIndex = rand() % enemyTextures.size();
             float startX = 850;
             float startY = rand() % 500 + 50;
-            enemyItems.emplace_back(enemyTextures[randomIndex], startX, startY, enemySpeeds[randomIndex]);
+            enemyItems.emplace_back(enemyTextures[randomIndex], startX, startY, enemySpeeds[randomIndex],
+                                   enemyWidths[randomIndex], enemyHeights[randomIndex]);
         }
     }
 
     // Update enemies
+    SDL_Rect subRect = submarine.getRect();
+    float subX = subRect.x + subRect.w / 2.0f;  // Submarine center X
+    float subY = subRect.y + subRect.h / 2.0f;  // Submarine center Y
+    
     for (auto it = enemyItems.begin(); it != enemyItems.end();) {
-        if (it->x < -100) {
+        if (it->x < -100 || (it->y > 600 && it->falling)) {  // Remove if off screen
             it = enemyItems.erase(it);
         } else {
-            it->update();
-            if (it->checkCollision(submarine.getRect())) {
+            it->update(subX, subY);  // Pass submarine position
+            if (it->checkCollision(submarine.getRect()) && !it->falling) {
                 lives--;
-                it = enemyItems.erase(it);
+                submarine.startHitBlink();  // Make submarine blink red
+                it->startHitBlink();        // Make enemy blink red
+                it->startFalling();         // Make enemy fall off screen
                 if (lives <= 0) gameOver = true;
+                ++it;
             } else ++it;
         }
     }
@@ -84,4 +95,22 @@ void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, boo
 void Level::render() {
     for (auto& litter : litterItems) litter.render(renderer);
     for (auto& e : enemyItems) e.render(renderer);
+}
+
+void Level::calmEnemies(float subX, float subY, float radius) {
+    for (auto& enemy : enemyItems) {
+        if (!enemy.active) continue;
+        
+        // Calculate distance from submarine to enemy center
+        float enemyCenterX = enemy.x + enemy.width / 2.0f;
+        float enemyCenterY = enemy.y + enemy.height / 2.0f;
+        float dx = enemyCenterX - subX;
+        float dy = enemyCenterY - subY;
+        float distance = std::sqrt(dx * dx + dy * dy);
+        
+        // If enemy is within calm radius, deactivate it
+        if (distance <= radius) {
+            enemy.active = false;
+        }
+    }
 }
