@@ -166,10 +166,10 @@ msgManager->start();
     // Submarine
     submarine = new Submarine(submarineTex, 200, 275, 100, 60);
 
-    // Level: pass litter + enemy textures
-    level = new Level(renderer,
-                      { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
-                      enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+    // Level: Start with Level1 (no animals)
+    level = new Level1(renderer,
+                       { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                       enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
     
     // Set oil texture for level 3 blackout effect
     level->setOilTexture(oilTex);
@@ -268,7 +268,7 @@ msgManager->start();
             submarine->updateBlink();
 
             // Update level (handles litter/enemies and level 3 blackout)
-            level->update(*submarine, *scoreboard, lives, gameOver, currentLevel);
+            level->update(*submarine, *scoreboard, lives, gameOver);
             
             // ----- EDIT START -----
 if (scoreboard->getLevel() == 1) {
@@ -284,16 +284,37 @@ if (scoreboard->getLevel() == 1) {
     }
 }
 // ----- EDIT END -----
-            // Detect level changes and swap background when reaching level 2 or 3
+            // Detect level changes and swap background + create new level instance
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
                     currentLevel = newLevel;
-                    if (currentLevel == 2) {
-                        // ----- EDIT START -----
+                    
+                    // Save litter state before deleting old level
+                    std::vector<Litter> savedLitter = level->getLitterItems();
+                    std::vector<Enemies> savedEnemies = level->getEnemyItems();
+                    
+                    // Delete old level and create new one based on level number
+                    delete level;
+                    level = nullptr;
+                    
+                    if (currentLevel == 1) {
+                        level = new Level1(renderer,
+                                          { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                                          enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                        level->setLitterItems(savedLitter);
+                        level->setEnemyItems(savedEnemies);
+                    }
+                    else if (currentLevel == 2) {
                         msgManager->loadMessageList({ level1End });
                         msgManager->start();
-// ----- EDIT END -----
+                        
+                        level = new Level2(renderer,
+                                          { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                                          enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                        level->setLitterItems(savedLitter);
+                        level->setEnemyItems(savedEnemies);
+                        
                         SDL_DestroyTexture(ocean);
                         SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
                         if (newOcean) {
@@ -305,6 +326,12 @@ if (scoreboard->getLevel() == 1) {
                         }
                     }
                     else if (currentLevel == 3) {
+                        level = new Level3(renderer,
+                                          { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                                          enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                        level->setLitterItems(savedLitter);
+                        level->setEnemyItems(savedEnemies);
+                        level->setOilTexture(oilTex);
                         
                         SDL_DestroyTexture(ocean);
                         SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
@@ -315,6 +342,15 @@ if (scoreboard->getLevel() == 1) {
                             if (altOcean) ocean = altOcean;
                             else std::cerr << "Failed to load ocean3.png: Assets/ocean3.png" << std::endl;
                         }
+                    }
+                    else if (currentLevel >= 4) {
+                        level = new Level4(renderer,
+                                          { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                                          enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                        level->setLitterItems(savedLitter);
+                        level->setEnemyItems(savedEnemies);
+                        level->setOilTexture(oilTex);
+                        // Keep level 3 background for level 4
                     }
                 }
             }
@@ -337,8 +373,8 @@ if (scoreboard->getLevel() == 1) {
         level->render();
         submarine->render(renderer);
         
-        // Level 3: Render blackout effects (oil spots and blackout overlay)
-        level->renderBlackoutEffects(currentLevel, *submarine);
+        // Level 3+: Render blackout effects (oil spots and blackout overlay)
+        level->renderBlackoutEffects(*submarine);
         
         scoreboard->render();
 

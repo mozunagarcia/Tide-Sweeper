@@ -5,15 +5,21 @@
 #include <iostream>
 #include <cmath>
 
+// ============================================================================
+// Base Level class implementation
+// ============================================================================
+
 Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTextures,
              const std::vector<SDL_Texture*>& enemyTextures_, const std::vector<float>& enemySpeeds_,
              const std::vector<int>& enemyWidths_, const std::vector<int>& enemyHeights_)
     : renderer(renderer_), enemyTextures(enemyTextures_), enemySpeeds(enemySpeeds_), 
       enemyWidths(enemyWidths_), enemyHeights(enemyHeights_), spawnTimer(0),
-      oilTexture(nullptr), blackoutNext(0), warningFrameCounter(0), isBlackout(false), isWarning(false), blackoutCounter(0)
+      spawnInterval(120), maxActiveEnemies(2),
+      oilTexture(nullptr), blackoutNext(0), warningFrameCounter(0), 
+      isBlackout(false), isWarning(false), blackoutCounter(0),
+      blackoutInterval(600), blackoutWarning(120), blackoutDuration(300)
 {
     // Create litter from provided textures using the original initial positions/speeds
-    // If there are fewer textures than expected, fall back to a simple spawn pattern
     if (litterTextures.size() >= 7) {
         litterItems.emplace_back(Litter(litterTextures[0], 200, 300, 1.5f));
         litterItems.emplace_back(Litter(litterTextures[1], 500, 400, 2.0f));
@@ -51,7 +57,7 @@ void Level::reset() {
     oilSpots.clear();
 }
 
-void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver, int currentLevel) {
+void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
     // Update litter
     for (auto& litter : litterItems) {
         bool missed = litter.update();
@@ -64,6 +70,14 @@ void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, boo
         }
     }
 
+    // Update enemies (can be overridden in derived classes)
+    updateEnemies(submarine, lives, gameOver);
+    
+    // Update blackout mechanic (only active in Level 3)
+    updateBlackoutMechanic();
+}
+
+void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
     // Spawn enemies periodically
     spawnTimer++;
     if (spawnTimer >= spawnInterval) {
@@ -81,32 +95,37 @@ void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, boo
 
     // Update enemies
     SDL_Rect subRect = submarine.getRect();
-    float subX = subRect.x + subRect.w / 2.0f;  // Submarine center X
-    float subY = subRect.y + subRect.h / 2.0f;  // Submarine center Y
+    float subX = subRect.x + subRect.w / 2.0f;
+    float subY = subRect.y + subRect.h / 2.0f;
     
     for (auto it = enemyItems.begin(); it != enemyItems.end();) {
-        if (it->x < -100 || (it->y > 600 && it->falling)) {  // Remove if off screen
+        if (it->x < -100 || (it->y > 600 && it->falling)) {
             it = enemyItems.erase(it);
         } else {
-            it->update(subX, subY);  // Pass submarine position
+            it->update(subX, subY);
             if (it->checkCollision(submarine.getRect()) && !it->falling) {
                 lives--;
-                submarine.startHitBlink();  // Make submarine blink red
-                it->startHitBlink();        // Make enemy blink red
-                it->startFalling();         // Make enemy fall off screen
+                submarine.startHitBlink();
+                it->startHitBlink();
+                it->startFalling();
                 if (lives <= 0) gameOver = true;
                 ++it;
             } else ++it;
         }
     }
-    
-    // Update blackout mechanic for level 3
-    updateBlackoutMechanic(currentLevel);
+}
+
+void Level::updateBlackoutMechanic() {
+    // Default: no blackout mechanic (only in Level 3)
 }
 
 void Level::render() {
     for (auto& litter : litterItems) litter.render(renderer);
     for (auto& e : enemyItems) e.render(renderer);
+}
+
+void Level::renderBlackoutEffects(Submarine& submarine) {
+    // Default: no blackout effects (only in Level 3)
 }
 
 void Level::calmEnemies(float subX, float subY, float radius) {
@@ -131,9 +150,68 @@ void Level::setOilTexture(SDL_Texture* oilTex) {
     oilTexture = oilTex;
 }
 
-void Level::updateBlackoutMechanic(int currentLevel) {
-    if (currentLevel != 3) return;
+// ============================================================================
+// Level 1: Only litter, no animals
+// ============================================================================
+
+Level1::Level1(SDL_Renderer* renderer,
+               const std::vector<SDL_Texture*>& litterTextures,
+               const std::vector<SDL_Texture*>& enemyTextures,
+               const std::vector<float>& enemySpeeds,
+               const std::vector<int>& enemyWidths,
+               const std::vector<int>& enemyHeights)
+    : Level(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights)
+{
+}
+
+void Level1::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
+    // Update litter only (no enemies in Level 1)
+    for (auto& litter : litterItems) {
+        bool missed = litter.update();
+        if (missed) {
+            scoreboard.setScore(scoreboard.getScore() - 10);
+        }
+        if (litter.active && litter.checkCollision(submarine.getRect())) {
+            litter.collect();
+            scoreboard.setScore(scoreboard.getScore() + 10);
+        }
+    }
+    // No enemy spawning or updates in Level 1
+}
+
+// ============================================================================
+// Level 2: Litter + Animals (uses base class implementation)
+// ============================================================================
+
+Level2::Level2(SDL_Renderer* renderer,
+               const std::vector<SDL_Texture*>& litterTextures,
+               const std::vector<SDL_Texture*>& enemyTextures,
+               const std::vector<float>& enemySpeeds,
+               const std::vector<int>& enemyWidths,
+               const std::vector<int>& enemyHeights)
+    : Level(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights)
+{
+}
+
+// ============================================================================
+// Level 3: Litter + Animals + Oil blackout mechanics
+// ============================================================================
+
+Level3::Level3(SDL_Renderer* renderer,
+               const std::vector<SDL_Texture*>& litterTextures,
+               const std::vector<SDL_Texture*>& enemyTextures,
+               const std::vector<float>& enemySpeeds,
+               const std::vector<int>& enemyWidths,
+               const std::vector<int>& enemyHeights)
+    : Level(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights)
+{
+}
+
+void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
+    // Call base class update
+    Level::update(submarine, scoreboard, lives, gameOver);
     
+    // Level 3 specific: Update blackout mechanic
     blackoutNext++;
     if (isBlackout) {
         blackoutCounter++;
@@ -154,7 +232,7 @@ void Level::updateBlackoutMechanic(int currentLevel) {
             if (warningFrameCounter >= spot.spawnFrame) {
                 // Fade in over 15 frames
                 if (spot.alpha < 1.0f) {
-                    spot.alpha += 0.066f; // Reaches 1.0 in ~15 frames
+                    spot.alpha += 0.066f;
                     if (spot.alpha > 1.0f) spot.alpha = 1.0f;
                 }
             }
@@ -171,19 +249,17 @@ void Level::updateBlackoutMechanic(int currentLevel) {
             isWarning = true;
             warningFrameCounter = 0;
             oilSpots.clear();
+            
             // Generate 3 huge oil spots positioned to cover the entire screen
-            // Screen is 800x600, spots will overlap significantly
             OilSpot spot1, spot2, spot3;
             
-            // Top-left quadrant spot
             spot1.x = 50;
             spot1.y = 50;
-            spot1.size = 600; // Very large
+            spot1.size = 600;
             spot1.spawnFrame = 0;
             spot1.alpha = 0.0f;
             oilSpots.push_back(spot1);
             
-            // Top-right to bottom area spot
             spot2.x = 350;
             spot2.y = 100;
             spot2.size = 550;
@@ -191,7 +267,6 @@ void Level::updateBlackoutMechanic(int currentLevel) {
             spot2.alpha = 0.0f;
             oilSpots.push_back(spot2);
             
-            // Center-bottom spot
             spot3.x = 150;
             spot3.y = 200;
             spot3.size = 500;
@@ -202,9 +277,7 @@ void Level::updateBlackoutMechanic(int currentLevel) {
     }
 }
 
-void Level::renderBlackoutEffects(int currentLevel, Submarine& submarine) {
-    if (currentLevel != 3) return;
-    
+void Level3::renderBlackoutEffects(Submarine& submarine) {
     // Show oil spots during warning phase with fade-in effect
     if (isWarning && !isBlackout && oilTexture) {
         for (const auto& spot : oilSpots) {
@@ -221,7 +294,7 @@ void Level::renderBlackoutEffects(int currentLevel, Submarine& submarine) {
     // Full blackout overlay
     if (isBlackout) {
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Completely black
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_Rect fullScreen = {0, 0, 800, 600};
         SDL_RenderFillRect(renderer, &fullScreen);
         
@@ -231,14 +304,14 @@ void Level::renderBlackoutEffects(int currentLevel, Submarine& submarine) {
         // Display oil slick warning message
         TTF_Font* warningFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 18);
         if (warningFont) {
-            SDL_Color warningColor = {255, 255, 0, 255}; // Yellow text
+            SDL_Color warningColor = {255, 255, 0, 255};
             SDL_Surface* warningSurf = TTF_RenderText_Blended_Wrapped(warningFont, "Be careful,\nyou're in an\noil slick!", warningColor, 130);
             if (warningSurf) {
                 SDL_Texture* warningTex = SDL_CreateTextureFromSurface(renderer, warningSurf);
                 if (warningTex) {
                     SDL_Rect warningRect = {
-                        660, // Position to the right of scoreboard
-                        95,  // Just below scoreboard
+                        660,
+                        95,
                         warningSurf->w,
                         warningSurf->h
                     };
@@ -250,4 +323,18 @@ void Level::renderBlackoutEffects(int currentLevel, Submarine& submarine) {
             TTF_CloseFont(warningFont);
         }
     }
+}
+
+// ============================================================================
+// Level 4: Everything from Level 3 (can be extended later)
+// ============================================================================
+
+Level4::Level4(SDL_Renderer* renderer,
+               const std::vector<SDL_Texture*>& litterTextures,
+               const std::vector<SDL_Texture*>& enemyTextures,
+               const std::vector<float>& enemySpeeds,
+               const std::vector<int>& enemyWidths,
+               const std::vector<int>& enemyHeights)
+    : Level3(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights)
+{
 }

@@ -6,6 +6,7 @@
 #include "Submarine.h"
 #include "Scoreboard.h"
 
+// Base Level class
 class Level {
 public:
     Level(SDL_Renderer* renderer,
@@ -14,16 +15,20 @@ public:
           const std::vector<float>& enemySpeeds,
           const std::vector<int>& enemyWidths,
           const std::vector<int>& enemyHeights);
-    ~Level();
+    virtual ~Level();
 
-    void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver, int currentLevel);
-    void render();
-    void renderBlackoutEffects(int currentLevel, Submarine& submarine);
-    void reset();
+    virtual void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver);
+    virtual void render();
+    virtual void renderBlackoutEffects(Submarine& submarine);
+    virtual void reset();
     void setOilTexture(SDL_Texture* oilTex);
     void calmEnemies(float subX, float subY, float radius);
+    std::vector<Litter>& getLitterItems() { return litterItems; }
+    void setLitterItems(const std::vector<Litter>& litter) { litterItems = litter; }
+    std::vector<Enemies>& getEnemyItems() { return enemyItems; }
+    void setEnemyItems(const std::vector<Enemies>& enemies) { enemyItems = enemies; }
 
-private:
+protected:
     SDL_Renderer* renderer;
     std::vector<Litter> litterItems;
     std::vector<Enemies> enemyItems;
@@ -32,10 +37,10 @@ private:
     std::vector<int> enemyWidths;
     std::vector<int> enemyHeights;
     int spawnTimer;
-    const int spawnInterval = 120;
-    const int maxActiveEnemies = 2;
+    int spawnInterval;
+    int maxActiveEnemies;
     
-    // Level 3 blackout system MAYBE DO A CLASS FOR THIS
+    // Oil blackout system (for Level 3)
     SDL_Texture* oilTexture;
     struct OilSpot { int x, y, size; int spawnFrame; float alpha; };
     std::vector<OilSpot> oilSpots;
@@ -44,9 +49,59 @@ private:
     bool isBlackout;
     bool isWarning;
     int blackoutCounter;
-    const int blackoutInterval = 600;  // 10 seconds at 60 FPS
-    const int blackoutWarning = 120;   // 2 seconds warning
-    const int blackoutDuration = 300;  // 5 seconds at 60 FPS
+    int blackoutInterval;
+    int blackoutWarning;
+    int blackoutDuration;
     
-    void updateBlackoutMechanic(int currentLevel);
+    virtual void updateEnemies(Submarine& submarine, int& lives, bool& gameOver);
+    virtual void updateBlackoutMechanic();
+};
+
+// Level 1: Only litter, no animals
+class Level1 : public Level {
+public:
+    Level1(SDL_Renderer* renderer,
+           const std::vector<SDL_Texture*>& litterTextures,
+           const std::vector<SDL_Texture*>& enemyTextures,
+           const std::vector<float>& enemySpeeds,
+           const std::vector<int>& enemyWidths,
+           const std::vector<int>& enemyHeights);
+    
+    void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
+};
+
+// Level 2: Litter + Animals
+class Level2 : public Level {
+public:
+    Level2(SDL_Renderer* renderer,
+           const std::vector<SDL_Texture*>& litterTextures,
+           const std::vector<SDL_Texture*>& enemyTextures,
+           const std::vector<float>& enemySpeeds,
+           const std::vector<int>& enemyWidths,
+           const std::vector<int>& enemyHeights);
+};
+
+// Level 3: Litter + Animals + Oil blackout mechanics
+class Level3 : public Level {
+public:
+    Level3(SDL_Renderer* renderer,
+           const std::vector<SDL_Texture*>& litterTextures,
+           const std::vector<SDL_Texture*>& enemyTextures,
+           const std::vector<float>& enemySpeeds,
+           const std::vector<int>& enemyWidths,
+           const std::vector<int>& enemyHeights);
+    
+    void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
+    void renderBlackoutEffects(Submarine& submarine) override;
+};
+
+// Level 4: Everything from Level 3 (can be extended later)
+class Level4 : public Level3 {
+public:
+    Level4(SDL_Renderer* renderer,
+           const std::vector<SDL_Texture*>& litterTextures,
+           const std::vector<SDL_Texture*>& enemyTextures,
+           const std::vector<float>& enemySpeeds,
+           const std::vector<int>& enemyWidths,
+           const std::vector<int>& enemyHeights);
 };
