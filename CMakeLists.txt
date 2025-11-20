@@ -101,6 +101,8 @@ add_executable(TideSweeper
     src/Enemies.cpp
     src/Scoreboard.cpp
     src/Messages.cpp
+    src/GameOverScreen.cpp
+
 )
 
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
