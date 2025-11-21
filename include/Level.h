@@ -52,6 +52,8 @@ protected:
     int blackoutInterval;
     int blackoutWarning;
     int blackoutDuration;
+    int blackoutWidth;
+    bool isBlackoutFading;
     
     virtual void updateEnemies(Submarine& submarine, int& lives, bool& gameOver);
     virtual void updateBlackoutMechanic();
