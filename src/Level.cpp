@@ -18,7 +18,7 @@ Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTex
       oilTexture(nullptr), blackoutNext(0), warningFrameCounter(0), 
       isBlackout(false), isWarning(false), blackoutCounter(0),
       blackoutInterval(600), blackoutWarning(120), blackoutDuration(300), blackoutWidth(0),
-      isBlackoutFading(false)
+      isBlackoutFading(false), isBlackoutFullyCovered(false), fullCoverCounter(0)
 {
     // Create litter from provided textures using the original initial positions/speeds
     if (litterTextures.size() >= 7) {
@@ -57,6 +57,8 @@ void Level::reset() {
     warningFrameCounter = 0;
     blackoutWidth = 0;
     isBlackoutFading = false;
+    isBlackoutFullyCovered = false;
+    fullCoverCounter = 0;
     // oilSpots.clear();
 }
 
@@ -217,10 +219,11 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     // Level 3 specific: Update blackout mechanic
     blackoutNext++;
     if (isBlackoutFading) {
+        blackoutCounter++; // Continue incrementing for wave animation
         // Blackout is receding from the left edge
-        if (blackoutWidth > 0) {
+        // Allow it to go below 0 so waves disappear completely beyond right edge
+        if (blackoutWidth > -100) {
             blackoutWidth -= 2; // Slower fade out: 800/400 = 2 pixels per frame
-            if (blackoutWidth < 0) blackoutWidth = 0;
         } else {
             // Completely faded out
             isBlackoutFading = false;
@@ -232,13 +235,22 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     } else if (isBlackout) {
         blackoutCounter++;
         // Expand blackout from right edge (takes about 400 frames to fully cover screen)
-        if (blackoutWidth < 800) {
+        // Add extra width (900) to allow waves to disappear completely beyond left edge
+        if (blackoutWidth < 900) {
             blackoutWidth += 2; // 800/400 = 2 pixels per frame
-            if (blackoutWidth > 800) blackoutWidth = 800;
+        } else if (!isBlackoutFullyCovered) {
+            // Blackout has reached full width, wait for waves to settle
+            isBlackoutFullyCovered = true;
+            fullCoverCounter = 0;
+        } else {
+            // Count frames while fully covered (wait ~60 frames for waves to disappear)
+            fullCoverCounter++;
         }
-        if (blackoutCounter >= blackoutDuration) {
-            // Start fading phase
+        
+        if (isBlackoutFullyCovered && fullCoverCounter >= 60 && blackoutCounter >= blackoutDuration) {
+            // Start fading phase only after waves have settled
             isBlackoutFading = true;
+            isBlackoutFullyCovered = false;
             // oilSpots.clear();
         }
     } else if (isWarning) {
@@ -368,28 +380,34 @@ void Level3::renderBlackoutEffects(Submarine& submarine) {
         
         // Re-render submarine on top of blackout
         submarine.render(renderer);
-        
-        // Display oil slick warning message
-        TTF_Font* warningFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 18);
-        if (warningFont) {
-            SDL_Color warningColor = {255, 255, 0, 255};
-            SDL_Surface* warningSurf = TTF_RenderText_Blended_Wrapped(warningFont, "Be careful,\nyou're in an\noil slick!", warningColor, 130);
-            if (warningSurf) {
-                SDL_Texture* warningTex = SDL_CreateTextureFromSurface(renderer, warningSurf);
-                if (warningTex) {
-                    SDL_Rect warningRect = {
-                        660,
-                        95,
-                        warningSurf->w,
-                        warningSurf->h
-                    };
-                    SDL_RenderCopy(renderer, warningTex, NULL, &warningRect);
-                    SDL_DestroyTexture(warningTex);
-                }
-                SDL_FreeSurface(warningSurf);
-            }
-            TTF_CloseFont(warningFont);
-        }
+    }
+}
+
+bool Level3::isPositionInBlackout(int x, int y) {
+    // No blackout if not active
+    if (!isBlackout && !isBlackoutFading) {
+        return false;
+    }
+    
+    // If fully covered (no waves visible), entire screen is in blackout
+    if (blackoutWidth >= 800 && !isBlackoutFading) {
+        return true;
+    }
+    
+    // Calculate wave offset for this y position
+    float wave1 = sin((y * 0.05f) + (blackoutCounter * 0.03f)) * 25.0f;
+    float wave2 = sin((y * 0.15f) + (blackoutCounter * 0.05f)) * 15.0f;
+    float wave3 = sin((y * 0.08f) - (blackoutCounter * 0.02f)) * 10.0f;
+    float wave = wave1 + wave2 + wave3;
+    
+    if (isBlackoutFading) {
+        // During fade: blackout is from x=0 to blackoutWidth+wave
+        int xEnd = blackoutWidth + static_cast<int>(wave);
+        return x <= xEnd;
+    } else {
+        // During expansion: blackout is from 800-blackoutWidth+wave to right edge
+        int xStart = 800 - blackoutWidth + static_cast<int>(wave);
+        return x >= xStart;
     }
 }
 

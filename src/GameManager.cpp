@@ -254,14 +254,25 @@ msgManager->start();
         if (!gameOver) {
             // Keyboard input
             const Uint8* keys = SDL_GetKeyboardState(NULL);
-            if (keys[SDL_SCANCODE_UP])    submarine->moveBy(0, -5);
-            if (keys[SDL_SCANCODE_DOWN])  submarine->moveBy(0, 5);
-            if (keys[SDL_SCANCODE_LEFT])  submarine->moveBy(-5, 0);
-            if (keys[SDL_SCANCODE_RIGHT]) submarine->moveBy(5, 0);
+            
+            // Check if submarine is in blackout to slow movement (only for Level3)
+            SDL_Rect subRect = submarine->getRect();
+            int subCenterX = subRect.x + subRect.w / 2;
+            int subCenterY = subRect.y + subRect.h / 2;
+            bool inBlackout = false;
+            Level3* level3 = dynamic_cast<Level3*>(level);
+            if (level3) {
+                inBlackout = level3->isPositionInBlackout(subCenterX, subCenterY);
+            }
+            int moveSpeed = inBlackout ? 2 : 5; // Slow movement in blackout
+            
+            if (keys[SDL_SCANCODE_UP])    submarine->moveBy(0, -moveSpeed);
+            if (keys[SDL_SCANCODE_DOWN])  submarine->moveBy(0, moveSpeed);
+            if (keys[SDL_SCANCODE_LEFT])  submarine->moveBy(-moveSpeed, 0);
+            if (keys[SDL_SCANCODE_RIGHT]) submarine->moveBy(moveSpeed, 0);
             
             // Calm ability with SPACE (prevents enemy from attacking when chasing is activated)
             if (keys[SDL_SCANCODE_SPACE]) {
-                SDL_Rect subRect = submarine->getRect();
                 float subX = subRect.x + subRect.w / 2.0f;
                 float subY = subRect.y + subRect.h / 2.0f;
                 level->calmEnemies(subX, subY, 150.0f);  // 150 pixel radius

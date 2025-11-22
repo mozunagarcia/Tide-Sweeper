@@ -54,6 +54,8 @@ protected:
     int blackoutDuration;
     int blackoutWidth;
     bool isBlackoutFading;
+    bool isBlackoutFullyCovered;
+    int fullCoverCounter;
     
     virtual void updateEnemies(Submarine& submarine, int& lives, bool& gameOver);
     virtual void updateBlackoutMechanic();
@@ -95,6 +97,7 @@ public:
     
     void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
     void renderBlackoutEffects(Submarine& submarine) override;
+    bool isPositionInBlackout(int x, int y);
 };
 
 // Level 4: Everything from Level 3 (can be extended later)
