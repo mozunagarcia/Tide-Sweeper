@@ -192,11 +192,19 @@ msgManager->start();
         lives = 3;
         gameOver = false;
         submarine->setPosition(200, 275);
-        level->reset();
         scoreboard->setScore(0);
         scoreboard->resetLevel();
         cameraX = 0.0f;
         currentLevel = 1;
+        
+        // Destroy old level and recreate as Level1
+        delete level;
+        level = new Level1(renderer,
+                          { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                          enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+        level->setOilTexture(oilTex);
+        
+        // Reset ocean background to level 1
         SDL_DestroyTexture(ocean);
         ocean = loadTexture(renderer, "Assets/ocean.png");
     };
