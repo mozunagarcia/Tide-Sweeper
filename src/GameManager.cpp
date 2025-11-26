@@ -196,6 +196,15 @@ msgManager->start();
         scoreboard->resetLevel();
         cameraX = 0.0f;
         currentLevel = 1;
+        
+        // Destroy old level and recreate as Level1
+        delete level;
+        level = new Level1(renderer,
+                          { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                          enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+        level->setOilTexture(oilTex);
+        
+        // Reset ocean background to level 1
         SDL_DestroyTexture(ocean);
         ocean = loadTexture(renderer, "Assets/ocean.png");
         
@@ -256,13 +265,16 @@ msgManager->start();
             // Keyboard input
             const Uint8* keys = SDL_GetKeyboardState(NULL);
             
-            // Change move speed here
-            float moveSpeed = 5;
-            
-            // Significantly reduce speed during oil spill blackout
-            if (level->isInBlackout()) {
-                moveSpeed = 2.5;  // Very slow movement during blackout
+            // Check if submarine is in blackout to slow movement (only for Level3)
+            SDL_Rect subRect = submarine->getRect();
+            int subCenterX = subRect.x + subRect.w / 2;
+            int subCenterY = subRect.y + subRect.h / 2;
+            bool inBlackout = false;
+            Level3* level3 = dynamic_cast<Level3*>(level);
+            if (level3) {
+                inBlackout = level3->isPositionInBlackout(subCenterX, subCenterY);
             }
+            int moveSpeed = inBlackout ? 2 : 5; // Slow movement in blackout
             
             if (keys[SDL_SCANCODE_UP])    submarine->moveBy(0, -moveSpeed);
             if (keys[SDL_SCANCODE_DOWN])  submarine->moveBy(0, moveSpeed);
@@ -271,7 +283,6 @@ msgManager->start();
             
             // Calm ability with SPACE (prevents enemy from attacking when chasing is activated)
             if (keys[SDL_SCANCODE_SPACE]) {
-                SDL_Rect subRect = submarine->getRect();
                 float subX = subRect.x + subRect.w / 2.0f;
                 float subY = subRect.y + subRect.h / 2.0f;
                 level->calmEnemies(subX, subY, 150.0f);  // 150 pixel radius

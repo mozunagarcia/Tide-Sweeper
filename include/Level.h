@@ -54,6 +54,10 @@ protected:
     int blackoutInterval;
     int blackoutWarning;
     int blackoutDuration;
+    int blackoutWidth;
+    bool isBlackoutFading;
+    bool isBlackoutFullyCovered;
+    int fullCoverCounter;
     
     virtual void updateEnemies(Submarine& submarine, int& lives, bool& gameOver);
     virtual void updateBlackoutMechanic();
@@ -95,9 +99,7 @@ public:
     
     void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
     void renderBlackoutEffects(Submarine& submarine) override;
-
-protected:
-    int lastBlackoutScore = 0;  // Track last score when blackout was triggered
+    bool isPositionInBlackout(int x, int y);
 };
 
 // Level 4: Superstorm Surge - Final level with timer and intense mechanics

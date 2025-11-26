@@ -19,7 +19,8 @@ Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTex
       spawnInterval(120), maxActiveEnemies(2),
       oilTexture(nullptr), blackoutNext(0), warningFrameCounter(0), 
       isBlackout(false), isWarning(false), blackoutCounter(0),
-      blackoutInterval(600), blackoutWarning(120), blackoutDuration(300)
+      blackoutInterval(600), blackoutWarning(120), blackoutDuration(300), blackoutWidth(0),
+      isBlackoutFading(false), isBlackoutFullyCovered(false), fullCoverCounter(0)
 {
     // Create litter from provided textures using the original initial positions/speeds
     if (litterTextures.size() >= 7) {
@@ -56,7 +57,11 @@ void Level::reset() {
     isWarning = false;
     blackoutCounter = 0;
     warningFrameCounter = 0;
-    oilSpots.clear();
+    blackoutWidth = 0;
+    isBlackoutFading = false;
+    isBlackoutFullyCovered = false;
+    fullCoverCounter = 0;
+    // oilSpots.clear();
 }
 
 void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
@@ -228,27 +233,57 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     // Call base class update
     Level::update(submarine, scoreboard, lives, gameOver);
     
-    int currentScore = scoreboard.getScore();
-    
-    // Trigger blackout every 200 points
-    if (currentScore / 200 > lastBlackoutScore / 200) {
-        // Start blackout
-        isBlackout = true;
-        blackoutCounter = 0;
-        lastBlackoutScore = currentScore;
-    }
-    
-    // Update blackout state
-    if (isBlackout) {
-        blackoutCounter++;
-        if (blackoutCounter >= blackoutDuration) {
-            // End blackout after duration
+    // Level 3 specific: Update blackout mechanic
+    blackoutNext++;
+    if (isBlackoutFading) {
+        blackoutCounter++; // Continue incrementing for wave animation
+        // Blackout is receding from the left edge
+        // Allow it to go below 0 so waves disappear completely beyond right edge
+        if (blackoutWidth > -100) {
+            blackoutWidth -= 2; // Slower fade out: 800/400 = 2 pixels per frame
+        } else {
+            // Completely faded out
+            isBlackoutFading = false;
             isBlackout = false;
             blackoutCounter = 0;
+            blackoutNext = 0;
         }
-    }
-    
-    // Level 3 specific: Create ink splotches near octopuses
+    } else if (isBlackout) {
+        blackoutCounter++;
+        // Expand blackout from right edge (takes about 400 frames to fully cover screen)
+        // Add extra width (900) to allow waves to disappear completely beyond left edge
+        if (blackoutWidth < 900) {
+            blackoutWidth += 2; // 800/400 = 2 pixels per frame
+        } else if (!isBlackoutFullyCovered) {
+            // Blackout has reached full width, wait for waves to settle
+            isBlackoutFullyCovered = true;
+            fullCoverCounter = 0;
+        } else {
+            // Count frames while fully covered (wait ~60 frames for waves to disappear)
+            fullCoverCounter++;
+        }
+        
+        if (isBlackoutFullyCovered && fullCoverCounter >= 60 && blackoutCounter >= blackoutDuration) {
+            // Start fading phase only after waves have settled
+            isBlackoutFading = true;
+            isBlackoutFullyCovered = false;
+            // oilSpots.clear();
+        }
+    } else if (isWarning) {
+        // In warning phase, update oil spots appearance
+        warningFrameCounter++;
+        
+        // // Update alpha for fading in oil spots
+        // for (auto& spot : oilSpots) {
+        //     if (warningFrameCounter >= spot.spawnFrame) {
+        //         // Fade in over 15 frames
+        //         if (spot.alpha < 1.0f) {
+        //             spot.alpha += 0.066f;
+        //             if (spot.alpha > 1.0f) spot.alpha = 1.0f;
+        //         }
+        //     }
+        // }
+        // Level 3 specific: Create ink splotches near octopuses
     for (auto& enemy : enemyItems) {
         // Only create ink for octopuses (type 2)
         if (enemy.enemyType == 2 && enemy.active) {
@@ -289,55 +324,147 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
         // Remove after fully faded
         else {
             it = oilSpots.erase(it);
+        
+        if (blackoutNext >= blackoutInterval + blackoutWarning) {
+            // Start full blackout
+            isBlackout = true;
+            blackoutCounter = 0;
+            blackoutWidth = 0; // Start with width 0 for expansion effect
+        }
+    } else {
+        if (blackoutNext >= blackoutInterval) {
+            // Start warning phase with oil spots
+            isWarning = true;
+            warningFrameCounter = 0;
+            // oilSpots.clear();
+            
+            // // Generate 3 huge oil spots positioned to cover the entire screen
+            // OilSpot spot1, spot2, spot3;
+            
+            // spot1.x = 50;
+            // spot1.y = 50;
+            // spot1.size = 600;
+            // spot1.spawnFrame = 0;
+            // spot1.alpha = 0.0f;
+            // oilSpots.push_back(spot1);
+            
+            // spot2.x = 350;
+            // spot2.y = 100;
+            // spot2.size = 550;
+            // spot2.spawnFrame = 20;
+            // spot2.alpha = 0.0f;
+            // oilSpots.push_back(spot2);
+            
+            // spot3.x = 150;
+            // spot3.y = 200;
+            // spot3.size = 500;
+            // spot3.spawnFrame = 40;
+            // spot3.alpha = 0.0f;
+            // oilSpots.push_back(spot3);
         }
     }
 }
 
 void Level3::renderBlackoutEffects(Submarine& submarine) {
-    // Render ink splotches from octopuses
-    if (oilTexture) {
-        for (const auto& spot : oilSpots) {
-            if (spot.alpha > 0.0f) {
-                SDL_SetTextureAlphaMod(oilTexture, static_cast<Uint8>(spot.alpha * 240));  // Max 240 for darker ink
-                SDL_Rect inkRect = { spot.x, spot.y, spot.size, spot.size };
-                SDL_RenderCopy(renderer, oilTexture, nullptr, &inkRect);
+    // // Show oil spots during warning phase with fade-in effect
+    // if (isWarning && !isBlackout && oilTexture) {
+    //     for (const auto& spot : oilSpots) {
+    //         if (spot.alpha > 0.0f) {
+    //             SDL_SetTextureAlphaMod(oilTexture, static_cast<Uint8>(spot.alpha * 255));
+    //             SDL_Rect oilRect = { spot.x, spot.y, spot.size, spot.size };
+    //             SDL_RenderCopy(renderer, oilTexture, nullptr, &oilRect);
+    //         }
+    //     }
+    //     // Reset alpha mod
+    //     SDL_SetTextureAlphaMod(oilTexture, 255);
+    // }
+    
+    // Full blackout overlay - expands from right edge with wavy border
+    if (isBlackout || isBlackoutFading) {
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
+        
+        // If blackout has fully expanded and not fading, just fill the entire screen
+        if (blackoutWidth >= 800 && !isBlackoutFading) {
+            SDL_Rect fullScreen = {0, 0, 800, 600};
+            SDL_RenderFillRect(renderer, &fullScreen);
+        } else {
+            // Draw blackout with wavy, irregular edge using vertical strips
+            // Loop through each horizontal line of the screen
+            for (int y = 0; y < 600; y++) {
+                // Create irregular wave pattern using multiple sine waves at different frequencies
+                // Combining multiple sine waves creates a more organic, irregular pattern
+                float wave1 = sin((y * 0.05f) + (blackoutCounter * 0.03f)) * 25.0f;        // Primary wave
+                float wave2 = sin((y * 0.15f) + (blackoutCounter * 0.05f)) * 15.0f;       // Secondary faster wave
+                float wave3 = sin((y * 0.08f) - (blackoutCounter * 0.02f)) * 10.0f;       // Tertiary wave moving opposite
+                float wave = wave1 + wave2 + wave3;  // Combine all waves for irregular pattern
+                
+                int xStart, width;
+                
+                if (isBlackoutFading) {
+                    // During fade: blackout recedes from left, waves on right edge
+                    // blackoutWidth shrinks from 800 to 0
+                    xStart = 0;
+                    int xEnd = blackoutWidth + static_cast<int>(wave);
+                    
+                    // Clamp to screen bounds
+                    if (xEnd < 0) xEnd = 0;
+                    if (xEnd > 800) xEnd = 800;
+                    
+                    width = xEnd;
+                } else {
+                    // During expansion: blackout expands from right, waves on left edge
+                    // Calculate the starting x position for this row, applying the wave offset
+                    // 800 - blackoutWidth is the base position (right edge moving left)
+                    // + wave adds the wavy variation to create the irregular edge
+                    xStart = 800 - blackoutWidth + static_cast<int>(wave);
+                    
+                    // Clamp to screen bounds to prevent drawing outside the window
+                    if (xStart < 0) xStart = 0;
+                    if (xStart > 800) xStart = 800;
+                    
+                    // Calculate the width of the blackout strip for this row
+                    width = 800 - xStart;
+                }
+                
+                if (width > 0) {
+                    // Draw a 1-pixel tall horizontal strip for this row
+                    SDL_Rect stripRect = {xStart, y, width, 1};
+                    SDL_RenderFillRect(renderer, &stripRect);
+                }
             }
         }
-        // Reset alpha mod
-        SDL_SetTextureAlphaMod(oilTexture, 150);
-    }
-    
-    // Full blackout overlay every 100 points
-    if (isBlackout) {
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);  // change opacity here 
-        SDL_Rect fullScreen = {0, 0, 800, 600};
-        SDL_RenderFillRect(renderer, &fullScreen);
         
         // Re-render submarine on top of blackout
         submarine.render(renderer);
-        
-        // Display warning message
-        TTF_Font* warningFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 18);
-        if (warningFont) {
-            SDL_Color warningColor = {255, 255, 0, 255};
-            SDL_Surface* warningSurf = TTF_RenderText_Blended_Wrapped(warningFont, "Oil spill!\nWatch out!", warningColor, 130);
-            if (warningSurf) {
-                SDL_Texture* warningTex = SDL_CreateTextureFromSurface(renderer, warningSurf);
-                if (warningTex) {
-                    SDL_Rect warningRect = {
-                        660,
-                        95,
-                        warningSurf->w,
-                        warningSurf->h
-                    };
-                    SDL_RenderCopy(renderer, warningTex, NULL, &warningRect);
-                    SDL_DestroyTexture(warningTex);
-                }
-                SDL_FreeSurface(warningSurf);
-            }
-            TTF_CloseFont(warningFont);
-        }
+    }
+}
+
+bool Level3::isPositionInBlackout(int x, int y) {
+    // No blackout if not active
+    if (!isBlackout && !isBlackoutFading) {
+        return false;
+    }
+    
+    // If fully covered (no waves visible), entire screen is in blackout
+    if (blackoutWidth >= 800 && !isBlackoutFading) {
+        return true;
+    }
+    
+    // Calculate wave offset for this y position
+    float wave1 = sin((y * 0.05f) + (blackoutCounter * 0.03f)) * 25.0f;
+    float wave2 = sin((y * 0.15f) + (blackoutCounter * 0.05f)) * 15.0f;
+    float wave3 = sin((y * 0.08f) - (blackoutCounter * 0.02f)) * 10.0f;
+    float wave = wave1 + wave2 + wave3;
+    
+    if (isBlackoutFading) {
+        // During fade: blackout is from x=0 to blackoutWidth+wave
+        int xEnd = blackoutWidth + static_cast<int>(wave);
+        return x <= xEnd;
+    } else {
+        // During expansion: blackout is from 800-blackoutWidth+wave to right edge
+        int xStart = 800 - blackoutWidth + static_cast<int>(wave);
+        return x >= xStart;
     }
 }
 
