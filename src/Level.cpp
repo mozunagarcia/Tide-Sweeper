@@ -273,17 +273,23 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
         // In warning phase, update oil spots appearance
         warningFrameCounter++;
         
-        // // Update alpha for fading in oil spots
-        // for (auto& spot : oilSpots) {
-        //     if (warningFrameCounter >= spot.spawnFrame) {
-        //         // Fade in over 15 frames
-        //         if (spot.alpha < 1.0f) {
-        //             spot.alpha += 0.066f;
-        //             if (spot.alpha > 1.0f) spot.alpha = 1.0f;
-        //         }
-        //     }
-        // }
-        // Level 3 specific: Create ink splotches near octopuses
+        // After warning period, trigger blackout
+        if (warningFrameCounter >= blackoutWarning) {
+            isWarning = false;
+            isBlackout = true;
+            blackoutCounter = 0;
+            blackoutWidth = 0; // Start with width 0 for expansion effect
+        }
+    } else {
+        // Check if it's time to start warning/blackout cycle
+        if (blackoutNext >= blackoutInterval) {
+            isWarning = true;
+            warningFrameCounter = 0;
+            blackoutNext = 0;  // Reset counter for next cycle
+        }
+    }
+    
+    // Level 3 specific: Create ink splotches near octopuses
     for (auto& enemy : enemyItems) {
         // Only create ink for octopuses (type 2)
         if (enemy.enemyType == 2 && enemy.active) {
@@ -324,60 +330,23 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
         // Remove after fully faded
         else {
             it = oilSpots.erase(it);
-        
-        if (blackoutNext >= blackoutInterval + blackoutWarning) {
-            // Start full blackout
-            isBlackout = true;
-            blackoutCounter = 0;
-            blackoutWidth = 0; // Start with width 0 for expansion effect
-        }
-    } else {
-        if (blackoutNext >= blackoutInterval) {
-            // Start warning phase with oil spots
-            isWarning = true;
-            warningFrameCounter = 0;
-            // oilSpots.clear();
-            
-            // // Generate 3 huge oil spots positioned to cover the entire screen
-            // OilSpot spot1, spot2, spot3;
-            
-            // spot1.x = 50;
-            // spot1.y = 50;
-            // spot1.size = 600;
-            // spot1.spawnFrame = 0;
-            // spot1.alpha = 0.0f;
-            // oilSpots.push_back(spot1);
-            
-            // spot2.x = 350;
-            // spot2.y = 100;
-            // spot2.size = 550;
-            // spot2.spawnFrame = 20;
-            // spot2.alpha = 0.0f;
-            // oilSpots.push_back(spot2);
-            
-            // spot3.x = 150;
-            // spot3.y = 200;
-            // spot3.size = 500;
-            // spot3.spawnFrame = 40;
-            // spot3.alpha = 0.0f;
-            // oilSpots.push_back(spot3);
         }
     }
 }
 
 void Level3::renderBlackoutEffects(Submarine& submarine) {
-    // // Show oil spots during warning phase with fade-in effect
-    // if (isWarning && !isBlackout && oilTexture) {
-    //     for (const auto& spot : oilSpots) {
-    //         if (spot.alpha > 0.0f) {
-    //             SDL_SetTextureAlphaMod(oilTexture, static_cast<Uint8>(spot.alpha * 255));
-    //             SDL_Rect oilRect = { spot.x, spot.y, spot.size, spot.size };
-    //             SDL_RenderCopy(renderer, oilTexture, nullptr, &oilRect);
-    //         }
-    //     }
-    //     // Reset alpha mod
-    //     SDL_SetTextureAlphaMod(oilTexture, 255);
-    // }
+    // Show ink spots with fade-in effect
+    if (oilTexture) {
+        for (const auto& spot : oilSpots) {
+            if (spot.alpha > 0.0f) {
+                SDL_SetTextureAlphaMod(oilTexture, static_cast<Uint8>(spot.alpha * 240));  // Max 240 for darker ink
+                SDL_Rect inkRect = { spot.x, spot.y, spot.size, spot.size };
+                SDL_RenderCopy(renderer, oilTexture, nullptr, &inkRect);
+            }
+        }
+        // Reset alpha mod
+        SDL_SetTextureAlphaMod(oilTexture, 240);
+    }
     
     // Full blackout overlay - expands from right edge with wavy border
     if (isBlackout || isBlackoutFading) {
