@@ -1,20 +1,34 @@
 #include "Messages.h"
+#include <SDL.h>
 #include <SDL_ttf.h>
+#include <SDL_image.h> 
+#include <iostream>
 
 Messages::Messages(SDL_Renderer* renderer)
-    : renderer(renderer), font(nullptr), currentMessage(nullptr),
-      currentIndex(-1), alpha(0), startTime(0), duration(5000),
-      active(false), state(DONE),
-      x(-400), targetX(20), speed(12.0f),
-      popupWidth(380), popupHeight(110)
+    : renderer(renderer)
 {
     font = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 22);
-}
+    if (!font) {
+        std::cerr << "Failed to load message font OpenSans.ttf\n";
+    }
 
+    radioTexture = IMG_LoadTexture(renderer, "Assets/Radio.png");
+    if (!radioTexture)
+        std::cout << "Failed to load Radio.png\n";
+}
 
 Messages::~Messages() {
     if (currentMessage) SDL_DestroyTexture(currentMessage);
     if (font) TTF_CloseFont(font);
+    if (radioTexture) SDL_DestroyTexture(radioTexture);
+
+}
+
+void Messages::setStyle(MessageStyle s) {
+    style = s;
+    typewriterActive = false;
+    visibleText.clear();
+    fullText.clear();
 }
 
 void Messages::loadMessageList(const std::vector<std::string>& msgs) {
@@ -24,144 +38,174 @@ void Messages::loadMessageList(const std::vector<std::string>& msgs) {
 
 void Messages::start() {
     if (messageList.empty()) return;
-
-    currentIndex = 0;
-    alpha = 0;
     active = true;
 
-    state = SLIDE_IN;
-    x = -popupWidth;        // start offscreen
+    if (style == MessageStyle::RADIO) {
+        startTypewriter(messageList[0]);
+        return;
+    }
+
+    // Cutscene mode
+    currentIndex = 0;
+    alpha = 0;
+    x = -400;
     startTime = SDL_GetTicks();
+    state = SLIDE_IN;
 
     if (currentMessage) SDL_DestroyTexture(currentMessage);
-    currentMessage = createTexture(messageList[currentIndex], 0);
+    currentMessage = createTexture(messageList[currentIndex]);
 }
 
+void Messages::startTypewriter(const std::string& text) {
+    style = MessageStyle::RADIO;
+    fullText = text;
+    visibleText = "";
+    charIndex = 0;
+    typewriterActive = true;
+    typeStart = SDL_GetTicks();
 
-SDL_Texture* Messages::createTexture(const std::string& text, Uint8 alphaValue)
-{
-    SDL_Color color = {255, 255, 255, alphaValue};
+    // measure text
+    int w, h;
+    if (TTF_SizeText(font, text.c_str(), &w, &h) == 0) {
+        radioW = w + 40;
+        radioH = h + 30;
+    }
+}
 
-    const int wrap = 480; // max width of text before wrapping
+SDL_Texture* Messages::createTexture(const std::string& text) {
+    SDL_Color white = {255, 255, 255};
+    SDL_Surface* surf = TTF_RenderText_Blended_Wrapped(font, text.c_str(), white, 480);
+    if (!surf) return nullptr;
 
-    SDL_Surface* surface = TTF_RenderText_Blended_Wrapped(font, text.c_str(), color, wrap);
-
-    popupWidth  = surface->w;
-    popupHeight = surface->h;
-
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+    SDL_FreeSurface(surf);
     return tex;
 }
 
-
 void Messages::update() {
-    if (!active || currentIndex < 0) return;
+    if (!active) return;
 
+    // ---------------------------------------
+    // RADIO TYPEWRITER
+    // ---------------------------------------
+    if (style == MessageStyle::RADIO) {
+        if (!typewriterActive) return;
+
+        Uint32 now = SDL_GetTicks();
+        float elapsed = (now - typeStart) / 1000.0f;
+
+        int shouldShow = int(elapsed * charsPerSecond);
+        if (shouldShow > charIndex &&
+            charIndex < (int)fullText.size())
+        {
+            charIndex = shouldShow;
+            visibleText = fullText.substr(0, charIndex);
+        }
+
+        if (charIndex >= (int)fullText.size())
+            typewriterActive = false;
+
+        return;
+    }
+
+    // ---------------------------------------
+    // CUTSCENE SLIDE-IN ANIMATION
+    // ---------------------------------------
     Uint32 now = SDL_GetTicks();
     Uint32 elapsed = now - startTime;
     const Uint32 fadeTime = 400;
 
     switch (state) {
+    case SLIDE_IN:
+        x += speed;
+        if (x >= targetX) {
+            x = targetX;
+            startTime = now;
+            state = VISIBLE;
+        }
+        break;
 
-        case SLIDE_IN:
-            x += speed;
-            if (x >= targetX) {
-                x = targetX;
-                startTime = now;
-                state = VISIBLE;
+    case VISIBLE:
+        if (elapsed < fadeTime)
+            alpha = (elapsed / float(fadeTime)) * 255;
+        else if (elapsed < duration - fadeTime)
+            alpha = 255;
+        else if (elapsed < duration)
+            alpha = 255 - ((elapsed - (duration - fadeTime)) / float(fadeTime)) * 255;
+        else
+            state = SLIDE_OUT;
+        break;
+
+    case SLIDE_OUT:
+        x -= speed;
+        if (x <= -400) {
+            currentIndex++;
+            if (currentIndex >= (int)messageList.size()) {
+                active = false;
+                state = DONE;
+                return;
             }
-            break;
 
-        case VISIBLE:
-            // Fade in
-            if (elapsed < fadeTime)
-                alpha = (elapsed / (float)fadeTime) * 255;
+            if (currentMessage) SDL_DestroyTexture(currentMessage);
+            currentMessage = createTexture(messageList[currentIndex]);
+            startTime = now;
+            x = -400;
+            alpha = 0;
+            state = SLIDE_IN;
+        }
+        break;
 
-            // Fully visible
-            else if (elapsed < duration - fadeTime)
-                alpha = 255;
-
-            // Fade out trigger
-            else if (elapsed < duration)
-                alpha = 255 - ((elapsed - (duration - fadeTime)) / (float)fadeTime) * 255;
-
-            // Time to slide out
-            else {
-                state = SLIDE_OUT;
-            }
-            break;
-
-        case SLIDE_OUT:
-            x -= speed;
-            if (x <= -popupWidth) {
-
-                currentIndex++;
-                if (currentIndex >= (int)messageList.size()) {
-                    state = DONE;
-                    active = false;
-                    return;
-                }
-
-                // start next message
-                if (currentMessage) SDL_DestroyTexture(currentMessage);
-                currentMessage = createTexture(messageList[currentIndex], 0);
-
-                alpha = 0;
-                x = -popupWidth;
-                startTime = now;
-                state = SLIDE_IN;
-            }
-            break;
-
-        default:
-            break;
+    default:
+        break;
     }
 
-    SDL_SetTextureAlphaMod(currentMessage, Uint8(alpha));
+    if (currentMessage)
+        SDL_SetTextureAlphaMod(currentMessage, Uint8(alpha));
 }
 
-
 void Messages::render() {
-    if (!active || !currentMessage) return;
+    if (!active) return;
 
-    int paddingX = 40;
-    int paddingY = 25;
+    // ---------------------------------------
+    // RADIO FIXED PANEL
+    // ---------------------------------------
+    if (style == MessageStyle::RADIO) {
+        int xPos = 80;
+        int yPos = 500;
 
-    int boxW = popupWidth  + paddingX;
-    int boxH = popupHeight + paddingY;
+        // --- RADIO SPRITE ---
+    if (radioTexture) {
+        SDL_Rect radioRect = { 10, yPos - 8, 70, 70 }; // adjust to size you want
+        SDL_RenderCopy(renderer, radioTexture, NULL, &radioRect);
+    }
 
-    int headerH = 28;
-    int totalH = headerH + boxH;
+        SDL_Rect box = { xPos, yPos, radioW, radioH };
+        SDL_SetRenderDrawColor(renderer, 10, 10, 40, 220);
+        SDL_RenderFillRect(renderer, &box);
 
-    int y = 500;  // vertical position
+        SDL_SetRenderDrawColor(renderer, 80, 160, 255, 255);
+        SDL_RenderDrawRect(renderer, &box);
 
-    // --- Background panel ---
-    SDL_Rect bg = { (int)x, y, boxW, totalH };
-    SDL_SetRenderDrawColor(renderer, 10, 10, 40, 220);
-    SDL_RenderFillRect(renderer, &bg);
+        SDL_Color white = {255,255,255};
+        SDL_Surface* surf =
+            TTF_RenderText_Blended_Wrapped(font, visibleText.c_str(), white, radioW - 20);
 
-    // --- Header ---
-    SDL_Color white = {255,255,255};
-    SDL_Surface* headSurf = TTF_RenderText_Blended(font, "Radio", white);
-    SDL_Texture* headTex = SDL_CreateTextureFromSurface(renderer, headSurf);
+        if (surf) {
+            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
+            SDL_Rect txt = { xPos + 10, yPos + 10, surf->w, surf->h };
+            SDL_RenderCopy(renderer, tex, NULL, &txt);
 
-    SDL_Rect headRect = { (int)x + 12, y + 4, headSurf->w, headSurf->h };
-    SDL_RenderCopy(renderer, headTex, NULL, &headRect);
+            SDL_FreeSurface(surf);
+            SDL_DestroyTexture(tex);
+        }
+        return;
+    }
 
-    SDL_FreeSurface(headSurf);
-    SDL_DestroyTexture(headTex);
-
-    // --- Message text ---
-    SDL_Rect textRect = {
-        (int)x + paddingX/2,
-        y + headerH + paddingY/2,
-        popupWidth,
-        popupHeight
-    };
-    SDL_RenderCopy(renderer, currentMessage, NULL, &textRect);
-
-    SDL_SetRenderDrawColor(renderer, 100,150,255,255);
-    SDL_RenderDrawRect(renderer, &bg);
+    // ---------------------------------------
+    // CUTSCENE
+    // ---------------------------------------
+    if (currentMessage) {
+        SDL_Rect rect = { int(x), 450, 380, 110 };
+        SDL_RenderCopy(renderer, currentMessage, NULL, &rect);
+    }
 }

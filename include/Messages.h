@@ -1,8 +1,13 @@
 #pragma once
 #include <SDL.h>
 #include <SDL_ttf.h>
-#include <string>
 #include <vector>
+#include <string>
+
+enum class MessageStyle {
+    RADIO,
+    CUTSCENE
+};
 
 class Messages {
 public:
@@ -13,34 +18,50 @@ public:
     void start();
     void update();
     void render();
-    bool finished() const;
+    void setStyle(MessageStyle s);
+
+    bool isActive() const { return active; }
 
 private:
+    SDL_Texture* createTexture(const std::string& text);
+    void startTypewriter(const std::string& text);
+
     SDL_Renderer* renderer;
     TTF_Font* font;
 
+    MessageStyle style = MessageStyle::RADIO;
+
+    SDL_Texture* radioTexture = nullptr;
+
+    // --- Radio typewriter ---
+    std::string fullText;
+    std::string visibleText;
+    Uint32 typeStart = 0;
+    int charIndex = 0;
+    int charsPerSecond = 40;
+    bool typewriterActive = false;
+
+    int radioW = 380;
+    int radioH = 80;
+
+    // --- Cutscene ---
     std::vector<std::string> messageList;
-    int currentIndex;
+    SDL_Texture* currentMessage = nullptr;
+    int currentIndex = -1;
 
-    SDL_Texture* currentMessage;
+    float alpha = 0;
+    Uint32 startTime = 0;
+    Uint32 duration = 5000;
 
+    bool active = false;
 
-    float alpha;
-    Uint32 startTime;
-    Uint32 duration;
-
-    bool active;
-
-    // ---- NEW RADIO POPUP ANIMATION ----
     enum State { SLIDE_IN, VISIBLE, SLIDE_OUT, DONE };
-    State state;
+    State state = DONE;
 
-    float x;          // current X position for slide animation
-    float targetX;    // final visible X
-    float speed;      // slide speed
-    int popupWidth;   // text box width
-    int popupHeight;  // text box height
+    float x = -400;
+    float targetX = 20;
+    float speed = 12.0f;
 
-
-    SDL_Texture* createTexture(const std::string& text, Uint8 alphaValue);
+    int popupWidth = 380;
+    int popupHeight = 110;
 };

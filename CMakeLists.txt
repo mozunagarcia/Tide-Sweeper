@@ -102,6 +102,7 @@ add_executable(TideSweeper
     src/Scoreboard.cpp
     src/Messages.cpp
     src/GameOverScreen.cpp
+    src/StoryManager.cpp
 
 )
 
