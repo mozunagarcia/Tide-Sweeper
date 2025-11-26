@@ -102,7 +102,7 @@ add_executable(TideSweeper
     src/Scoreboard.cpp
     src/Messages.cpp
     src/GameOverScreen.cpp
-
+    src/TrashCluster.cpp
 )
 
 target_link_libraries(TideSweeper ${EXTRA_LIBS})

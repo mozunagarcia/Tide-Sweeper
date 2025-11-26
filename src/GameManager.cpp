@@ -152,7 +152,7 @@ msgManager->start();
     SDL_Texture* sharkTexture = loadTexture(renderer, "Assets/Shark.png");
 
     std::vector<SDL_Texture*> enemyTextures = { swordfishTexture, eelTexture, octopusTexture, anglerTexture, sharkTexture };
-    std::vector<float> enemySpeeds = { 4.0f, 3.8f, 3.5f, 4.2f, 4.5f };
+    std::vector<float> enemySpeeds = { 6.0f, 6.0f, 6.0f, 6.0f, 4.0f };
     std::vector<int> enemyWidths = { 70, 70, 60, 60, 60 };    // Swordfish, Eel, Octopus, Angler, Shark widths
     std::vector<int> enemyHeights = { 50, 30, 60, 55, 40 };   // Swordfish, Eel, Octopus, Angler, Shark heights
 
@@ -192,17 +192,26 @@ msgManager->start();
         lives = 3;
         gameOver = false;
         submarine->setPosition(200, 275);
-        level->reset();
         scoreboard->setScore(0);
         scoreboard->resetLevel();
         cameraX = 0.0f;
         currentLevel = 1;
         SDL_DestroyTexture(ocean);
         ocean = loadTexture(renderer, "Assets/ocean.png");
+        
+        // Recreate Level 1 to properly reset all state
+        delete level;
+        level = new Level1(renderer,
+                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
+                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+        level->setOilTexture(oilTex);
     };
 
     SDL_Event event;
     srand(static_cast<unsigned int>(time(nullptr)));
+
+    // Frame timing for accurate updates
+    Uint32 lastTime = SDL_GetTicks();
 
     // Main loop
     while (running) {
@@ -246,10 +255,19 @@ msgManager->start();
         if (!gameOver) {
             // Keyboard input
             const Uint8* keys = SDL_GetKeyboardState(NULL);
-            if (keys[SDL_SCANCODE_UP])    submarine->moveBy(0, -5);
-            if (keys[SDL_SCANCODE_DOWN])  submarine->moveBy(0, 5);
-            if (keys[SDL_SCANCODE_LEFT])  submarine->moveBy(-5, 0);
-            if (keys[SDL_SCANCODE_RIGHT]) submarine->moveBy(5, 0);
+            
+            // Change move speed here
+            float moveSpeed = 5;
+            
+            // Significantly reduce speed during oil spill blackout
+            if (level->isInBlackout()) {
+                moveSpeed = 2.5;  // Very slow movement during blackout
+            }
+            
+            if (keys[SDL_SCANCODE_UP])    submarine->moveBy(0, -moveSpeed);
+            if (keys[SDL_SCANCODE_DOWN])  submarine->moveBy(0, moveSpeed);
+            if (keys[SDL_SCANCODE_LEFT])  submarine->moveBy(-moveSpeed, 0);
+            if (keys[SDL_SCANCODE_RIGHT]) submarine->moveBy(moveSpeed, 0);
             
             // Calm ability with SPACE (prevents enemy from attacking when chasing is activated)
             if (keys[SDL_SCANCODE_SPACE]) {
@@ -264,13 +282,10 @@ msgManager->start();
             // Update submarine blink effect
             submarine->updateBlink();
 
-            // Update submarine blink effect
-            submarine->updateBlink();
-
             // Update level (handles litter/enemies and level 3 blackout)
             level->update(*submarine, *scoreboard, lives, gameOver);
-            
-            // ----- EDIT START -----
+
+// ----- EDIT START -----
 if (scoreboard->getLevel() == 1) {
     int currentScore = scoreboard->getScore();
 
@@ -356,17 +371,34 @@ if (scoreboard->getLevel() == 1) {
             }
         }
 
-        // Scroll background
-        cameraX += scrollSpeed;
+        // Scroll background (faster in Level 4 with debris wall)
+        float effectiveScrollSpeed = scrollSpeed;
+        if (currentLevel == 4) {
+            Level4* level4 = dynamic_cast<Level4*>(level);
+            if (level4) {
+                effectiveScrollSpeed += level4->getScrollOffset() * 0.1f;  // Additional scroll
+            }
+        }
+        cameraX += effectiveScrollSpeed;
         if (cameraX >= bgWidth) cameraX -= bgWidth;
+
+        // Apply camera shake in Level 4
+        int shakeX = 0, shakeY = 0;
+        if (currentLevel == 4) {
+            Level4* level4 = dynamic_cast<Level4*>(level);
+            if (level4 && level4->getCameraShake() > 0) {
+                shakeX = (rand() % 11) - 5;  // -5 to +5 pixels
+                shakeY = (rand() % 11) - 5;
+            }
+        }
 
         // Render
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         SDL_Rect srcRect = { 0, 0, bgWidth, bgHeight };
-        SDL_Rect dest1 = { static_cast<int>(-cameraX), 0, bgWidth, bgHeight };
-        SDL_Rect dest2 = { static_cast<int>(-cameraX) + bgWidth, 0, bgWidth, bgHeight };
+        SDL_Rect dest1 = { static_cast<int>(-cameraX) + shakeX, shakeY, bgWidth, bgHeight };
+        SDL_Rect dest2 = { static_cast<int>(-cameraX) + bgWidth + shakeX, shakeY, bgWidth, bgHeight };
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest1);
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest2);
 
@@ -416,7 +448,16 @@ msgManager->render();
 
 // ----- EDIT END -----
         SDL_RenderPresent(renderer);
-        SDL_Delay(16);
+        
+        // Frame timing - maintain exactly 60 FPS
+        Uint32 frameEnd = SDL_GetTicks();
+        Uint32 frameTime = frameEnd - lastTime;
+        
+        if (frameTime < 17) {  // Target 17ms per frame for ~60 FPS
+            SDL_Delay(17 - frameTime);
+        }
+        
+        lastTime = SDL_GetTicks();
     }
 
     // Cleanup textures

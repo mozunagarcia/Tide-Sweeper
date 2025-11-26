@@ -61,3 +61,7 @@ void Submarine::updateBlink() {
         hitBlinkTimer--;
     }
 }
+
+bool Submarine::isInvulnerable() const {
+    return hitBlinkTimer > 0;
+}

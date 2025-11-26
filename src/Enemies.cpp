@@ -1,8 +1,8 @@
 #include "Enemies.h"
 #include <cmath>
 
-Enemies::Enemies(SDL_Texture* tex, float startX, float startY, float moveSpeed, int w, int h)
-    : texture(tex), x(startX), y(startY), speed(moveSpeed), active(true), respawnTimer(0), width(w), height(h)
+Enemies::Enemies(SDL_Texture* tex, float startX, float startY, float moveSpeed, int w, int h, int type)
+    : texture(tex), x(startX), y(startY), speed(moveSpeed), active(true), respawnTimer(0), width(w), height(h), enemyType(type)
 {
 }
 
@@ -31,13 +31,16 @@ void Enemies::update(float subX, float subY) {
     float dy = subY - y;
     float distance = std::sqrt(dx * dx + dy * dy);
     
-    // If submarine is within detection radius, chase it
-    if (distance < detectionRadius && distance > 0) {
+    // Only sharks (type 4) chase the submarine when in range
+    if (enemyType == 4 && distance < detectionRadius && distance > 0) {
         // Normalize direction and move toward submarine
         float dirX = dx / distance;
         float dirY = dy / distance;
         x += dirX * speed;
         y += dirY * speed;
+    } else if (enemyType == 2) {
+        // Octopus (type 2) moves upward from bottom
+        y -= speed;
     } else {
         // Normal behavior: move left
         x -= speed;

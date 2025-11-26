@@ -5,6 +5,7 @@
 #include "Enemies.h"
 #include "Submarine.h"
 #include "Scoreboard.h"
+#include "TrashCluster.h"
 
 // Base Level class
 class Level {
@@ -27,6 +28,7 @@ public:
     void setLitterItems(const std::vector<Litter>& litter) { litterItems = litter; }
     std::vector<Enemies>& getEnemyItems() { return enemyItems; }
     void setEnemyItems(const std::vector<Enemies>& enemies) { enemyItems = enemies; }
+    bool isInBlackout() const { return isBlackout; }
 
 protected:
     SDL_Renderer* renderer;
@@ -93,9 +95,12 @@ public:
     
     void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
     void renderBlackoutEffects(Submarine& submarine) override;
+
+protected:
+    int lastBlackoutScore = 0;  // Track last score when blackout was triggered
 };
 
-// Level 4: Everything from Level 3 (can be extended later)
+// Level 4: Superstorm Surge - Final level with timer and intense mechanics
 class Level4 : public Level3 {
 public:
     Level4(SDL_Renderer* renderer,
@@ -104,4 +109,23 @@ public:
            const std::vector<float>& enemySpeeds,
            const std::vector<int>& enemyWidths,
            const std::vector<int>& enemyHeights);
+    
+    void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
+    void updateBlackoutMechanic() override;  // Disable ink mechanics in Level 4
+    void renderBlackoutEffects(Submarine& submarine) override;
+    void render() override;
+    int getStormTimer() const { return stormTimer; }
+    float getScrollOffset() const { return scrollOffset; }
+    int getCameraShake() const { return cameraShakeFrames; }
+
+private:
+    int stormTimer;           // Countdown timer in frames (60 fps)
+    int stormPulseCounter;    // For periodic storm pulses
+    float litterSpeedMultiplier;  // Increases litter speed
+    std::vector<TrashCluster> trashClusters;  // Giant debris clusters
+    float scrollOffset;       // Auto-scroll position
+    float scrollSpeed;        // Speed of forced scrolling
+    int cameraShakeFrames;    // Frames of camera shake remaining
+    int distanceTraveled;     // Distance traveled (for pressure)
+    int clusterSpawnTimer;    // Timer for spawning new clusters
 };

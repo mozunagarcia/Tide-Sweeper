@@ -4,6 +4,8 @@
 #include <ctime>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
+#include <SDL_ttf.h>
 
 // ============================================================================
 // Base Level class implementation
@@ -86,10 +88,19 @@ void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
         for (const auto& enemy : enemyItems) if (enemy.active) activeCount++;
         if (activeCount < maxActiveEnemies && !enemyTextures.empty()) {
             int randomIndex = rand() % enemyTextures.size();
-            float startX = 850;
-            float startY = rand() % 500 + 50;
+            float startX, startY;
+            
+            // Octopus (index 2) spawns from bottom, others from right
+            if (randomIndex == 2) {
+                startX = rand() % 700 + 50;  // Random X position across screen
+                startY = 600;  // Start from bottom
+            } else {
+                startX = 850;  // Start from right
+                startY = rand() % 500 + 50;  // Random Y position
+            }
+            
             enemyItems.emplace_back(enemyTextures[randomIndex], startX, startY, enemySpeeds[randomIndex],
-                                   enemyWidths[randomIndex], enemyHeights[randomIndex]);
+                                   enemyWidths[randomIndex], enemyHeights[randomIndex], randomIndex);
         }
     }
 
@@ -99,7 +110,13 @@ void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
     float subY = subRect.y + subRect.h / 2.0f;
     
     for (auto it = enemyItems.begin(); it != enemyItems.end();) {
-        if (it->x < -100 || (it->y > 600 && it->falling)) {
+        // Remove enemies that go off screen
+        // Octopus (type 2) removed when going off top, others when going off left
+        bool offScreen = (it->enemyType == 2 && it->y < -100) || 
+                        (it->enemyType != 2 && it->x < -100) || 
+                        (it->y > 600 && it->falling);
+        
+        if (offScreen) {
             it = enemyItems.erase(it);
         } else {
             it->update(subX, subY);
@@ -211,101 +228,100 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     // Call base class update
     Level::update(submarine, scoreboard, lives, gameOver);
     
-    // Level 3 specific: Update blackout mechanic
-    blackoutNext++;
+    int currentScore = scoreboard.getScore();
+    
+    // Trigger blackout every 200 points
+    if (currentScore / 200 > lastBlackoutScore / 200) {
+        // Start blackout
+        isBlackout = true;
+        blackoutCounter = 0;
+        lastBlackoutScore = currentScore;
+    }
+    
+    // Update blackout state
     if (isBlackout) {
         blackoutCounter++;
         if (blackoutCounter >= blackoutDuration) {
-            // End blackout
+            // End blackout after duration
             isBlackout = false;
-            isWarning = false;
             blackoutCounter = 0;
-            blackoutNext = 0;
-            oilSpots.clear();
         }
-    } else if (isWarning) {
-        // In warning phase, update oil spots appearance
-        warningFrameCounter++;
-        
-        // Update alpha for fading in oil spots
-        for (auto& spot : oilSpots) {
-            if (warningFrameCounter >= spot.spawnFrame) {
-                // Fade in over 15 frames
-                if (spot.alpha < 1.0f) {
-                    spot.alpha += 0.066f;
-                    if (spot.alpha > 1.0f) spot.alpha = 1.0f;
-                }
+    }
+    
+    // Level 3 specific: Create ink splotches near octopuses
+    for (auto& enemy : enemyItems) {
+        // Only create ink for octopuses (type 2)
+        if (enemy.enemyType == 2 && enemy.active) {
+            // Random chance to spawn ink (about 5% per frame)
+            if (rand() % 100 < 5) {
+                OilSpot inkSpot;
+                // Spawn ink near the octopus position
+                inkSpot.x = static_cast<int>(enemy.x) - 50 + (rand() % 100);
+                inkSpot.y = static_cast<int>(enemy.y) - 50 + (rand() % 100);
+                inkSpot.size = 250 + (rand() % 150);  // Random size 250-400 (bigger)
+                inkSpot.spawnFrame = 0;
+                inkSpot.alpha = 0.0f;
+                oilSpots.push_back(inkSpot);
             }
         }
+    }
+    
+    // Fade in and fade out ink spots
+    for (auto it = oilSpots.begin(); it != oilSpots.end();) {
+        it->spawnFrame++;
         
-        if (blackoutNext >= blackoutInterval + blackoutWarning) {
-            // Start full blackout
-            isBlackout = true;
-            blackoutCounter = 0;
+        // Fade in for first 20 frames
+        if (it->spawnFrame < 20) {
+            it->alpha += 0.05f;
+            if (it->alpha > 1.0f) it->alpha = 1.0f;
+            ++it;
         }
-    } else {
-        if (blackoutNext >= blackoutInterval) {
-            // Start warning phase with oil spots
-            isWarning = true;
-            warningFrameCounter = 0;
-            oilSpots.clear();
-            
-            // Generate 3 huge oil spots positioned to cover the entire screen
-            OilSpot spot1, spot2, spot3;
-            
-            spot1.x = 50;
-            spot1.y = 50;
-            spot1.size = 600;
-            spot1.spawnFrame = 0;
-            spot1.alpha = 0.0f;
-            oilSpots.push_back(spot1);
-            
-            spot2.x = 350;
-            spot2.y = 100;
-            spot2.size = 550;
-            spot2.spawnFrame = 20;
-            spot2.alpha = 0.0f;
-            oilSpots.push_back(spot2);
-            
-            spot3.x = 150;
-            spot3.y = 200;
-            spot3.size = 500;
-            spot3.spawnFrame = 40;
-            spot3.alpha = 0.0f;
-            oilSpots.push_back(spot3);
+        // Stay visible for 60 frames
+        else if (it->spawnFrame < 80) {
+            ++it;
+        }
+        // Fade out for next 20 frames
+        else if (it->spawnFrame < 100) {
+            it->alpha -= 0.05f;
+            if (it->alpha < 0.0f) it->alpha = 0.0f;
+            ++it;
+        }
+        // Remove after fully faded
+        else {
+            it = oilSpots.erase(it);
         }
     }
 }
 
 void Level3::renderBlackoutEffects(Submarine& submarine) {
-    // Show oil spots during warning phase with fade-in effect
-    if (isWarning && !isBlackout && oilTexture) {
+    // Render ink splotches from octopuses
+    if (oilTexture) {
         for (const auto& spot : oilSpots) {
             if (spot.alpha > 0.0f) {
-                SDL_SetTextureAlphaMod(oilTexture, static_cast<Uint8>(spot.alpha * 255));
-                SDL_Rect oilRect = { spot.x, spot.y, spot.size, spot.size };
-                SDL_RenderCopy(renderer, oilTexture, nullptr, &oilRect);
+                SDL_SetTextureAlphaMod(oilTexture, static_cast<Uint8>(spot.alpha * 240));  // Max 240 for darker ink
+                SDL_Rect inkRect = { spot.x, spot.y, spot.size, spot.size };
+                SDL_RenderCopy(renderer, oilTexture, nullptr, &inkRect);
             }
         }
         // Reset alpha mod
-        SDL_SetTextureAlphaMod(oilTexture, 255);
+        SDL_SetTextureAlphaMod(oilTexture, 150);
     }
     
-    // Full blackout overlay
+    // Full blackout overlay every 100 points
     if (isBlackout) {
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);  // change opacity here 
         SDL_Rect fullScreen = {0, 0, 800, 600};
         SDL_RenderFillRect(renderer, &fullScreen);
         
         // Re-render submarine on top of blackout
         submarine.render(renderer);
         
-        // Display oil slick warning message
+        // Display warning message
         TTF_Font* warningFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 18);
         if (warningFont) {
             SDL_Color warningColor = {255, 255, 0, 255};
-            SDL_Surface* warningSurf = TTF_RenderText_Blended_Wrapped(warningFont, "Be careful,\nyou're in an\noil slick!", warningColor, 130);
+            SDL_Surface* warningSurf = TTF_RenderText_Blended_Wrapped(warningFont, "Oil spill!\nWatch out!", warningColor, 130);
             if (warningSurf) {
                 SDL_Texture* warningTex = SDL_CreateTextureFromSurface(renderer, warningSurf);
                 if (warningTex) {
@@ -326,7 +342,7 @@ void Level3::renderBlackoutEffects(Submarine& submarine) {
 }
 
 // ============================================================================
-// Level 4: Everything from Level 3 (can be extended later)
+// Level 4: Superstorm Surge - Final level with timer
 // ============================================================================
 
 Level4::Level4(SDL_Renderer* renderer,
@@ -335,6 +351,161 @@ Level4::Level4(SDL_Renderer* renderer,
                const std::vector<float>& enemySpeeds,
                const std::vector<int>& enemyWidths,
                const std::vector<int>& enemyHeights)
-    : Level3(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights)
+    : Level3(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights),
+      stormTimer(3600),  // 60 seconds at 60 FPS
+      stormPulseCounter(0),
+      litterSpeedMultiplier(1.0f),
+      scrollOffset(0),
+      scrollSpeed(0.65f),  // Scroll feed for level 4
+      cameraShakeFrames(0),
+      distanceTraveled(0),
+      clusterSpawnTimer(0)
 {
+    // Increase enemy spawn rate for final level
+    maxActiveEnemies = 4;  // More enemies on screen
+    spawnInterval = 80;    // Spawn more frequently
+    
+    // Add extra litter for final level - double the amount
+    if (litterTextures.size() >= 7) {
+        // Add 7 more litter items with different positions
+        litterItems.emplace_back(Litter(litterTextures[0], 300, 150, 1.7f));
+        litterItems.emplace_back(Litter(litterTextures[1], 600, 300, 2.1f));
+        litterItems.emplace_back(Litter(litterTextures[2], 450, 450, 1.9f));
+        litterItems.emplace_back(Litter(litterTextures[3], 550, 100, 1.4f));
+        litterItems.emplace_back(Litter(litterTextures[4], 250, 500, 2.3f));
+        litterItems.emplace_back(Litter(litterTextures[5], 750, 200, 1.8f));
+        litterItems.emplace_back(Litter(litterTextures[6], 150, 350, 2.0f));
+    }
+    
+    // Initialize with some trash clusters (the debris wall)
+    std::vector<SDL_Texture*> clusterTextures(litterTextures.begin(), 
+                                               litterTextures.begin() + std::min((size_t)7, litterTextures.size()));
+    trashClusters.emplace_back(TrashCluster(clusterTextures, 850, 100, 5));
+    trashClusters.emplace_back(TrashCluster(clusterTextures, 1100, 300, 5));
+    trashClusters.emplace_back(TrashCluster(clusterTextures, 950, 450, 5));
+}
+
+void Level4::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
+    // Decrease timer
+    if (stormTimer > 0) {
+        stormTimer--;
+    } else {
+        // Timer ran out - game over
+        gameOver = true;
+    }
+    
+    // Update forced scroll
+    scrollOffset += scrollSpeed;
+    distanceTraveled += (int)scrollSpeed;
+    
+    // Decrease camera shake
+    if (cameraShakeFrames > 0) {
+        cameraShakeFrames--;
+    }
+    
+    // Update trash clusters with scroll speed
+    for (auto& cluster : trashClusters) {
+        cluster.update(scrollSpeed);
+        
+        // Check collision with submarine 
+        if (cluster.isActive() && cluster.checkCollision(submarine.getRect())) {
+            cluster.hit();
+            scoreboard.setScore(scoreboard.getScore() + 20);  // Bonus points for hitting debris
+            cameraShakeFrames = 5;  // Small camera shake feedback
+        }
+    }
+    
+    // Spawn new clusters periodically
+    clusterSpawnTimer++;
+    if (clusterSpawnTimer >= 180) {  // Every 3 seconds
+        clusterSpawnTimer = 0;
+        std::vector<SDL_Texture*> clusterTextures;
+        for (auto& litter : litterItems) {
+            if (litter.texture) clusterTextures.push_back(litter.texture);
+            if (clusterTextures.size() >= 7) break;
+        }
+        if (!clusterTextures.empty()) {
+            int randomY = 50 + rand() % 450;
+            int randomHealth = 3 + rand() % 3;  // 3-5 hits
+            trashClusters.emplace_back(TrashCluster(clusterTextures, 850, randomY, randomHealth));
+        }
+    }
+    
+    // Remove inactive clusters
+    trashClusters.erase(
+        std::remove_if(trashClusters.begin(), trashClusters.end(),
+                      [](const TrashCluster& c) { return !c.active; }),
+        trashClusters.end()
+    );
+    
+    // Update litter normally 
+    for (auto& litter : litterItems) {
+        bool missed = litter.update();
+        if (missed) {
+            scoreboard.setScore(scoreboard.getScore() - 10);
+        }
+        if (litter.active && litter.checkCollision(submarine.getRect())) {
+            litter.collect();
+            scoreboard.setScore(scoreboard.getScore() + 10);
+        }
+    }
+    
+    // Update enemies (with increased spawn rate from constructor)
+    updateEnemies(submarine, lives, gameOver);
+}
+
+// Override to disable ink/oil mechanics in Level 4
+void Level4::updateBlackoutMechanic() {
+    // No ink mechanics in final level
+}
+
+void Level4::render() {
+    // Render trash clusters
+    for (auto& cluster : trashClusters) {
+        cluster.render(renderer);
+    }
+    
+    // Render regular litter and enemies
+    Level::render();
+}
+
+void Level4::renderBlackoutEffects(Submarine& submarine) {
+    
+    // Storm timer
+    TTF_Font* timerFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 24);
+    if (timerFont) {
+        int seconds = stormTimer / 60;
+        int minutes = seconds / 60;
+        seconds = seconds % 60;
+        
+        char timerText[32];
+        snprintf(timerText, sizeof(timerText), "Timer: %d:%02d", minutes, seconds);
+        
+        // Timer color: green -> yellow -> red as time runs out
+        SDL_Color timerColor;
+        if (stormTimer > 1800) {  // > 30 seconds
+            timerColor = {0, 255, 0, 255};  // Green
+        } else if (stormTimer > 600) {  // > 10 seconds
+            timerColor = {255, 255, 0, 255};  // Yellow
+        } else {
+            timerColor = {255, 0, 0, 255};  // Red
+        }
+        
+        SDL_Surface* timerSurf = TTF_RenderText_Blended(timerFont, timerText, timerColor);
+        if (timerSurf) {
+            SDL_Texture* timerTex = SDL_CreateTextureFromSurface(renderer, timerSurf);
+            if (timerTex) {
+                SDL_Rect timerRect = {
+                    10,
+                    50,
+                    timerSurf->w,
+                    timerSurf->h
+                };
+                SDL_RenderCopy(renderer, timerTex, NULL, &timerRect);
+                SDL_DestroyTexture(timerTex);
+            }
+            SDL_FreeSurface(timerSurf);
+        }
+        TTF_CloseFont(timerFont);
+    }
 }

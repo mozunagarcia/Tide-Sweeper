@@ -59,7 +59,11 @@ void ScoreDisplay::setScore(int newScore) {
     if (score != newScore) {
         score = newScore;
         // Update level if score reaches thresholds
-        if (score >= 200 && level == 2) {
+        if (score >= 700 && level == 3) {
+            level = 4;  // Level 4 starts 500 points after Level 3 (200 + 500 = 700)
+            updateLevelTexture();
+        }
+        else if (score >= 200 && level == 2) {
             level = 3;
             updateLevelTexture();
         }
