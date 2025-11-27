@@ -7,9 +7,8 @@ StoryManager::StoryManager(Messages* msg)
 {
     levels.resize(5);
 
-    //
     // LEVEL 1 — Tutorial
-    //
+
     levels[1].zoneName = "Entering Zone: Coastal Trash Vortex";
     levels[1].radioIntro = {
         "This area is safe, perfect for training.",
@@ -30,9 +29,7 @@ StoryManager::StoryManager(Messages* msg)
 
 
 
-    //
     // LEVEL 2 — Wildlife Disturbance
-    //
     levels[2].zoneName = "Entering Zone: Wildlife Disturbance Front";
     levels[2].radioIntro = {
         "Animals are fleeing deeper waters.",
@@ -47,9 +44,8 @@ StoryManager::StoryManager(Messages* msg)
 
 
 
-    //
+
     // LEVEL 3 — Oil Spill Corridor
-    //
     levels[3].zoneName = "Entering Zone: Oil Spill Corridor";
     levels[3].radioIntro = {
         "We've traced the source of the wildlife panic.",
@@ -65,9 +61,8 @@ StoryManager::StoryManager(Messages* msg)
 
 
 
-    //
+
     // LEVEL 4 — Illegal Dumping Grounds (Final)
-    //
     levels[4].zoneName = "Entering Zone: Illegal Dumping Grounds";
     levels[4].radioIntro = {
         "This is it, the source of the contamination.",
@@ -104,9 +99,8 @@ void StoryManager::reset()
 
 
 
-//
+
 // CUTSCENE (slides from left)
-//
 void StoryManager::playCutscene(const Cutscene& cs)
 {
     if (cs.lines.empty()) return;
@@ -118,9 +112,8 @@ void StoryManager::playCutscene(const Cutscene& cs)
 
 
 
-//
+
 // LEVEL START
-//
 void StoryManager::onLevelChange(int newLevel)
 {
     currentLevel = newLevel;
@@ -146,9 +139,8 @@ void StoryManager::onLevelChange(int newLevel)
 
 
 
-//
 // LEVEL END
-//
+
 void StoryManager::onLevelEnd(int oldLevel)
 {
     auto& L = levels[oldLevel];
@@ -194,9 +186,7 @@ void StoryManager::update(int score, int level)
 
 
 
-//
 // HUD ZONE NAME / END MESSAGE BANNER
-//
 void StoryManager::renderLevelChange(SDL_Renderer* renderer)
 {
     if (!lvlChangeActive || lvlChangeText.empty()) return;
@@ -218,9 +208,8 @@ void StoryManager::renderLevelChange(SDL_Renderer* renderer)
     int w = surf->w;
     int h = surf->h;
 
-    // -----------------------------
     //  POSITION HUD ABOVE RADIO
-    // -----------------------------
+    
     int radioY = 500;     // radio panel Y
     int padding = 10;     // spacing between HUD and radio
 
