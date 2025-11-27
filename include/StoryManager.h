@@ -4,18 +4,14 @@
 #include <SDL.h>
 #include "Messages.h"
 
-// ------------------------------------------------------
 // CUTSCENE DATA (only Level 1 intro + Level 4 outro use it)
-// ------------------------------------------------------
 struct Cutscene {
     std::vector<std::string> lines;
     bool playsBeforeLevel = false;
     bool playsAfterLevel  = false;
 };
 
-// ------------------------------------------------------
 // PER-LEVEL STORY DATA
-// ------------------------------------------------------
 struct LevelData {
     std::string zoneName;                // Top-left HUD banner text
 
@@ -30,9 +26,7 @@ struct LevelData {
     int milestoneIndex = 0;              // Which milestone to show next
 };
 
-// ------------------------------------------------------
 // STORY MANAGER
-// ------------------------------------------------------
 class StoryManager
 {
 public:

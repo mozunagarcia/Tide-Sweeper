@@ -43,6 +43,17 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
     "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
     "Ghost nets make up a major part of ocean plastic and trap animals for years.",
     "Illegal dumping harms marine life and destroys fragile ecosystems."
+    "Over 8 million tons of plastic enter the ocean every year.",
+    "Microplastics have been found in Arctic snow and deep-sea trenches.",
+    "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
+    "Coral reefs can get sick from chemicals in sunscreen or plastic waste.",
+    "Around 700 marine species are harmed by plastic pollution.",
+    "The Great Pacific Garbage Patch is larger than Texas.",
+    "Some plastics absorb toxic chemicals and become more dangerous to animals.",
+    "Cigarette filters are the most common litter found on beaches.",
+    "One liter of oil can pollute up to one million liters of seawater.",
+    "The ocean floor contains millions of tons of trash, including lost cargo.",
+    "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
 };
 // ----- EDIT END -----
 
