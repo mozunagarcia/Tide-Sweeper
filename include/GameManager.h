@@ -33,6 +33,7 @@ private:
     bool running;
     bool startGame;
     Mix_Music* backgroundMusic;
+    Mix_Chunk* levelCompleteSound;
 
     std::vector<std::string> facts;   // Fact strings used in pause + game over
 };

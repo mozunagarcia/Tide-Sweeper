@@ -215,6 +215,52 @@ Level2::Level2(SDL_Renderer* renderer,
 {
 }
 
+void Level2::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
+    // Spawn enemies periodically (excluding octopuses)
+    spawnTimer++;
+    if (spawnTimer >= spawnInterval) {
+        spawnTimer = 0;
+        int activeCount = 0;
+        for (const auto& enemy : enemyItems) if (enemy.active) activeCount++;
+        if (activeCount < maxActiveEnemies && !enemyTextures.empty()) {
+            // Exclude octopus (index 2) from Level 2
+            int randomIndex;
+            do {
+                randomIndex = rand() % enemyTextures.size();
+            } while (randomIndex == 2);  // Skip octopus
+            
+            float startX = 850;  // Start from right
+            float startY = rand() % 500 + 50;  // Random Y position
+            
+            enemyItems.emplace_back(enemyTextures[randomIndex], startX, startY, enemySpeeds[randomIndex],
+                                   enemyWidths[randomIndex], enemyHeights[randomIndex], randomIndex);
+        }
+    }
+
+    // Update enemies (same as base class)
+    SDL_Rect subRect = submarine.getRect();
+    float subX = subRect.x + subRect.w / 2.0f;
+    float subY = subRect.y + subRect.h / 2.0f;
+    
+    for (auto it = enemyItems.begin(); it != enemyItems.end();) {
+        bool offScreen = it->x < -100 || (it->y > 600 && it->falling);
+        
+        if (offScreen) {
+            it = enemyItems.erase(it);
+        } else {
+            it->update(subX, subY);
+            if (it->checkCollision(submarine.getRect()) && !it->falling) {
+                lives--;
+                submarine.startHitBlink();
+                it->startHitBlink();
+                it->startFalling();
+                if (lives <= 0) gameOver = true;
+                ++it;
+            } else ++it;
+        }
+    }
+}
+
 // ============================================================================
 // Level 3: Litter + Animals + Oil blackout mechanics
 // ============================================================================
@@ -448,38 +494,21 @@ Level4::Level4(SDL_Renderer* renderer,
                const std::vector<int>& enemyWidths,
                const std::vector<int>& enemyHeights)
     : Level3(renderer, litterTextures, enemyTextures, enemySpeeds, enemyWidths, enemyHeights),
-      stormTimer(3600),  // 60 seconds at 60 FPS
+      stormTimer(1800),  // 60 seconds at 60 FPS
       stormPulseCounter(0),
-      litterSpeedMultiplier(1.0f),
+      litterSpeedMultiplier(5.0f),
       scrollOffset(0),
-      scrollSpeed(0.65f),  // Scroll feed for level 4
-      cameraShakeFrames(0),
-      distanceTraveled(0),
-      clusterSpawnTimer(0)
+      litterSpawnTimer(0),
+      storedLitterTextures(litterTextures)
+      //scrollSpeed(0.65f)  // Scroll feed for level 4
 {
-    // Increase enemy spawn rate for final level
-    maxActiveEnemies = 4;  // More enemies on screen
-    spawnInterval = 80;    // Spawn more frequently
-    
-    // Add extra litter for final level - double the amount
-    if (litterTextures.size() >= 7) {
-        // Add 7 more litter items with different positions
-        litterItems.emplace_back(Litter(litterTextures[0], 300, 150, 1.7f));
-        litterItems.emplace_back(Litter(litterTextures[1], 600, 300, 2.1f));
-        litterItems.emplace_back(Litter(litterTextures[2], 450, 450, 1.9f));
-        litterItems.emplace_back(Litter(litterTextures[3], 550, 100, 1.4f));
-        litterItems.emplace_back(Litter(litterTextures[4], 250, 500, 2.3f));
-        litterItems.emplace_back(Litter(litterTextures[5], 750, 200, 1.8f));
-        litterItems.emplace_back(Litter(litterTextures[6], 150, 350, 2.0f));
-    }
-    
-    // Initialize with some trash clusters (the debris wall)
-    std::vector<SDL_Texture*> clusterTextures(litterTextures.begin(), 
-                                               litterTextures.begin() + std::min((size_t)7, litterTextures.size()));
-    trashClusters.emplace_back(TrashCluster(clusterTextures, 850, 100, 5));
-    trashClusters.emplace_back(TrashCluster(clusterTextures, 1100, 300, 5));
-    trashClusters.emplace_back(TrashCluster(clusterTextures, 950, 450, 5));
-}
+    // Fewer but faster enemies for final level
+    maxActiveEnemies = 2;  // Fewer enemies on screen
+    spawnInterval = 180;   // Spawn less frequently (every 3 seconds)
+
+    // Clear all litter from base class and Level 3
+    litterItems.clear();
+ }
 
 void Level4::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
     // Decrease timer
@@ -490,58 +519,38 @@ void Level4::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
         gameOver = true;
     }
     
-    // Update forced scroll
-    scrollOffset += scrollSpeed;
-    distanceTraveled += (int)scrollSpeed;
-    
-    // Decrease camera shake
-    if (cameraShakeFrames > 0) {
-        cameraShakeFrames--;
-    }
-    
-    // Update trash clusters with scroll speed
-    for (auto& cluster : trashClusters) {
-        cluster.update(scrollSpeed);
-        
-        // Check collision with submarine 
-        if (cluster.isActive() && cluster.checkCollision(submarine.getRect())) {
-            cluster.hit();
-            scoreboard.setScore(scoreboard.getScore() + 20);  // Bonus points for hitting debris
-            cameraShakeFrames = 5;  // Small camera shake feedback
+    // Spawn new litter from the right side continuously
+    litterSpawnTimer++;
+    if (litterSpawnTimer >= 10 && storedLitterTextures.size() >= 7) {  // Spawn every 0.17 seconds 
+        litterSpawnTimer = 0;
+        // Spawn 2-3 pieces of litter at once for higher density
+        int spawnCount = 2 + (rand() % 2);  // 2 or 3 items
+        for (int i = 0; i < spawnCount; i++) {
+            int texIndex = rand() % 7;
+            int randomY = 50 + (rand() % 500);  // Keep within visible area
+            float randomSpeed = 4.0f;// 1.5f + (rand() % 15) / 10.0f;  // Speed between 1.5 and 3.0
+            int randomX = 850 + (rand() % 100);  // Slight variation in spawn position
+            litterItems.emplace_back(Litter(storedLitterTextures[texIndex], randomX, randomY, randomSpeed));
         }
     }
     
-    // Spawn new clusters periodically
-    clusterSpawnTimer++;
-    if (clusterSpawnTimer >= 180) {  // Every 3 seconds
-        clusterSpawnTimer = 0;
-        std::vector<SDL_Texture*> clusterTextures;
-        for (auto& litter : litterItems) {
-            if (litter.texture) clusterTextures.push_back(litter.texture);
-            if (clusterTextures.size() >= 7) break;
-        }
-        if (!clusterTextures.empty()) {
-            int randomY = 50 + rand() % 450;
-            int randomHealth = 3 + rand() % 3;  // 3-5 hits
-            trashClusters.emplace_back(TrashCluster(clusterTextures, 850, randomY, randomHealth));
-        }
-    }
-    
-    // Remove inactive clusters
-    trashClusters.erase(
-        std::remove_if(trashClusters.begin(), trashClusters.end(),
-                      [](const TrashCluster& c) { return !c.active; }),
-        trashClusters.end()
-    );
-    
-    // Update litter normally 
+    // Update litter - continuous flow from right to left
     for (auto& litter : litterItems) {
-        bool missed = litter.update();
-        if (missed) {
-            scoreboard.setScore(scoreboard.getScore() - 10);
+        if (!litter.active) {
+            continue;
         }
+        
+        // Move the litter left (continuous flow)
+        litter.x -= litter.speed;
+        
+        // Remove litter that goes off the left side
+        if (litter.x < -100) {
+            litter.active = false;
+        }
+        
+        // Check collision with submarine
         if (litter.active && litter.checkCollision(submarine.getRect())) {
-            litter.collect();
+            litter.active = false;
             scoreboard.setScore(scoreboard.getScore() + 10);
         }
     }
@@ -555,12 +564,55 @@ void Level4::updateBlackoutMechanic() {
     // No ink mechanics in final level
 }
 
-void Level4::render() {
-    // Render trash clusters
-    for (auto& cluster : trashClusters) {
-        cluster.render(renderer);
+void Level4::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
+    // Spawn enemies periodically (excluding octopuses and sharks)
+    spawnTimer++;
+    if (spawnTimer >= spawnInterval) {
+        spawnTimer = 0;
+        int activeCount = 0;
+        for (const auto& enemy : enemyItems) if (enemy.active) activeCount++;
+        if (activeCount < maxActiveEnemies && !enemyTextures.empty()) {
+            // Exclude octopus (index 2) and shark (index 4) from Level 4
+            int randomIndex;
+            do {
+                randomIndex = rand() % enemyTextures.size();
+            } while (randomIndex == 2 || randomIndex == 4);  // Skip octopus and shark
+            
+            float startX = 850;  // Start from right
+            float startY = rand() % 500 + 50;  // Random Y position
+            
+            // Speed up enemies to match fast litter flow 
+            float fastSpeed = enemySpeeds[randomIndex] * 3.0f;
+            enemyItems.emplace_back(enemyTextures[randomIndex], startX, startY, fastSpeed,
+                                   enemyWidths[randomIndex], enemyHeights[randomIndex], randomIndex);
+        }
     }
+
+    // Update enemies (same as base class)
+    SDL_Rect subRect = submarine.getRect();
+    float subX = subRect.x + subRect.w / 2.0f;
+    float subY = subRect.y + subRect.h / 2.0f;
     
+    for (auto it = enemyItems.begin(); it != enemyItems.end();) {
+        bool offScreen = it->x < -100 || (it->y > 600 && it->falling);
+        
+        if (offScreen) {
+            it = enemyItems.erase(it);
+        } else {
+            it->update(subX, subY);
+            if (it->checkCollision(submarine.getRect()) && !it->falling) {
+                lives--;
+                submarine.startHitBlink();
+                it->startHitBlink();
+                it->startFalling();
+                if (lives <= 0) gameOver = true;
+                ++it;
+            } else ++it;
+        }
+    }
+}
+
+void Level4::render() {
     // Render regular litter and enemies
     Level::render();
 }
