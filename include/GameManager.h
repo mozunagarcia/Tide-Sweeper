@@ -8,6 +8,8 @@
 #include "Scoreboard.h"
 #include "Messages.h"
 #include "Menu.hpp"
+#include "StoryManager.h"
+
 
 class GameManager {
 public:
@@ -26,6 +28,7 @@ private:
     Scoreboard* scoreboard;
     Messages* messages;
     Messages* msgManager;   // Story/message system
+    StoryManager* storyManager;
     Menu* menu;
     bool running;
     bool startGame;

@@ -9,6 +9,7 @@
 // ----- EDIT START -----
 #include "GameOverScreen.h"
 #include "Messages.h" 
+#include "StoryManager.h"
 
 //#include "ClueScreen.h"
 // ----- EDIT END -----
@@ -34,12 +35,25 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
 // ----- EDIT START -----
     // Initialize upgraded Messages system
     msgManager = new Messages(renderer);
+    storyManager = new StoryManager(msgManager);
+
 
     facts = {
     "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
     "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
     "Ghost nets make up a major part of ocean plastic and trap animals for years.",
     "Illegal dumping harms marine life and destroys fragile ecosystems."
+    "Over 8 million tons of plastic enter the ocean every year.",
+    "Microplastics have been found in Arctic snow and deep-sea trenches.",
+    "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
+    "Coral reefs can get sick from chemicals in sunscreen or plastic waste.",
+    "Around 700 marine species are harmed by plastic pollution.",
+    "The Great Pacific Garbage Patch is larger than Texas.",
+    "Some plastics absorb toxic chemicals and become more dangerous to animals.",
+    "Cigarette filters are the most common litter found on beaches.",
+    "One liter of oil can pollute up to one million liters of seawater.",
+    "The ocean floor contains millions of tons of trash, including lost cargo.",
+    "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
 };
 // ----- EDIT END -----
 
@@ -51,7 +65,6 @@ GameManager::~GameManager() {
     delete level;
     delete submarine;
     delete scoreboard;
-    delete messages;
     delete msgManager;
     delete menu;
     
@@ -76,29 +89,6 @@ void GameManager::run() {
         SDL_Delay(16); // ~60 FPS
     }
 
-//--- edit---
-    // Start-of-level 1 transition messages
-std::vector<std::string> level1Start = {
-    "Entering Zone: Coastal Trash Vortex",
-    // "This storm is small, but don't underestimate it. Use this mission to get a feel for maneuvering in circular debris flow."
-};
-
-// Mid-level milestone messages (triggered every 30 points)
-std::vector<std::string> level1Milestones = {
-    "Trash currents detected. Move carefully.",
-    "Animal signature nearby - avoid contact.",
-    "Good work - debris density increasing ahead."
-};
-int level1MilestoneIndex = 0;
-
-// End-of-level transition (shown when Level 2 begins)
-std::string level1End = "Storm dispersing... nice job out there.";
-
-// First time threshold for point-based messages
-int nextMessageScore = 30;
-
-//--- edit---
-
     if (!running) return;
 
     // Stop menu music and load game music
@@ -120,12 +110,6 @@ int nextMessageScore = 30;
         Mix_VolumeMusic(MIX_MAX_VOLUME / 2); // Set to 50% volume
     }
 
-    // ----- EDIT START -----
-msgManager->loadMessageList(level1Start);
-msgManager->start();
-
-// ----- EDIT END -----
-
 
     // --- Load shared textures --- (paths kept identical to original)
     SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
@@ -134,6 +118,8 @@ msgManager->start();
         std::cerr << "Missing textures! Place ocean.png and submarine.png in /assets\n";
         return;
     }
+    //Radio textures
+    SDL_Texture* radioTex = loadTexture(renderer, "Assets/Radio.png");
 
     // Litter textures
     SDL_Texture* canTex = loadTexture(renderer, "Assets/can.png");
@@ -174,9 +160,9 @@ msgManager->start();
     // Set oil texture for level 3 blackout effect
     level->setOilTexture(oilTex);
 
-    // Messages (currently minimal)
-    messages = new Messages(renderer);
-
+    //----edit
+    storyManager->onLevelChange(1);
+    //----edit
     // Game state
     int lives = 3;
     bool gameOver = false;
@@ -189,6 +175,9 @@ msgManager->start();
 
     // Reset function
     auto resetGame = [&]() {
+        //edit
+        storyManager->reset(); 
+        //edit
         lives = 3;
         gameOver = false;
         submarine->setPosition(200, 275);
@@ -296,6 +285,12 @@ msgManager->start();
             // Update level (handles litter/enemies and level 3 blackout)
             level->update(*submarine, *scoreboard, lives, gameOver);
 
+            // --- edit start ---
+            storyManager->update(scoreboard->getScore(), scoreboard->getLevel());
+            // --- edit end ---
+
+            
+
 // ----- EDIT START -----
 if (scoreboard->getLevel() == 1) {
     int currentScore = scoreboard->getScore();
@@ -314,15 +309,24 @@ if (scoreboard->getLevel() == 1) {
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
+                   
+                    // --- edit start ---
+                    storyManager->onLevelEnd(currentLevel);
+                    // --- edit end ---
+
                     currentLevel = newLevel;
                     
                     // Save litter state before deleting old level
                     std::vector<Litter> savedLitter = level->getLitterItems();
                     std::vector<Enemies> savedEnemies = level->getEnemyItems();
-                    
+
                     // Delete old level and create new one based on level number
                     delete level;
                     level = nullptr;
+
+                    // --- edit start ---
+                    storyManager->onLevelChange(currentLevel);
+                    // --- edit end ---
                     
                     if (currentLevel == 1) {
                         level = new Level1(renderer,
@@ -331,10 +335,7 @@ if (scoreboard->getLevel() == 1) {
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                     }
-                    else if (currentLevel == 2) {
-                        msgManager->loadMessageList({ level1End });
-                        msgManager->start();
-                        
+                    else if (currentLevel == 2) {                 
                         level = new Level2(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
@@ -452,6 +453,7 @@ if (gameOver) {
         break;
     }
 }
+storyManager->renderLevelChange(renderer);
 
 // Render level story messages
 msgManager->update();
