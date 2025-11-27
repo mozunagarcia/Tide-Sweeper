@@ -42,7 +42,7 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
     "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
     "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
     "Ghost nets make up a major part of ocean plastic and trap animals for years.",
-    "Illegal dumping harms marine life and destroys fragile ecosystems."
+    "Illegal dumping harms marine life and destroys fragile ecosystems.",
     "Over 8 million tons of plastic enter the ocean every year.",
     "Microplastics have been found in Arctic snow and deep-sea trenches.",
     "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
@@ -55,6 +55,8 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
     "The ocean floor contains millions of tons of trash, including lost cargo.",
     "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
 };
+
+
 // ----- EDIT END -----
 
 
@@ -290,21 +292,6 @@ void GameManager::run() {
             // --- edit end ---
 
             
-
-// ----- EDIT START -----
-if (scoreboard->getLevel() == 1) {
-    int currentScore = scoreboard->getScore();
-
-    if (currentScore >= nextMessageScore) {
-        if (level1MilestoneIndex < level1Milestones.size()) {
-            msgManager->loadMessageList({ level1Milestones[level1MilestoneIndex] });
-            msgManager->start();
-            level1MilestoneIndex++;
-        }
-        nextMessageScore += 30;  // Next milestone = +30 points
-    }
-}
-// ----- EDIT END -----
             // Detect level changes and swap background + create new level instance
             {
                 int newLevel = scoreboard->getLevel();
