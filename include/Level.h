@@ -5,7 +5,6 @@
 #include "Enemies.h"
 #include "Submarine.h"
 #include "Scoreboard.h"
-#include "TrashCluster.h"
 
 // Base Level class
 class Level {
@@ -85,6 +84,8 @@ public:
            const std::vector<float>& enemySpeeds,
            const std::vector<int>& enemyWidths,
            const std::vector<int>& enemyHeights);
+    
+    void updateEnemies(Submarine& submarine, int& lives, bool& gameOver) override;
 };
 
 // Level 3: Litter + Animals + Oil blackout mechanics
@@ -114,6 +115,7 @@ public:
     
     void update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) override;
     void updateBlackoutMechanic() override;  // Disable ink mechanics in Level 4
+    void updateEnemies(Submarine& submarine, int& lives, bool& gameOver) override;  // Exclude octopuses and sharks
     void renderBlackoutEffects(Submarine& submarine) override;
     void render() override;
     int getStormTimer() const { return stormTimer; }
@@ -124,10 +126,11 @@ private:
     int stormTimer;           // Countdown timer in frames (60 fps)
     int stormPulseCounter;    // For periodic storm pulses
     float litterSpeedMultiplier;  // Increases litter speed
-    std::vector<TrashCluster> trashClusters;  // Giant debris clusters
     float scrollOffset;       // Auto-scroll position
     float scrollSpeed;        // Speed of forced scrolling
     int cameraShakeFrames;    // Frames of camera shake remaining
     int distanceTraveled;     // Distance traveled (for pressure)
     int clusterSpawnTimer;    // Timer for spawning new clusters
+    int litterSpawnTimer;     // Timer for spawning new litter from the right
+    std::vector<SDL_Texture*> storedLitterTextures;  // Store textures for spawning
 };

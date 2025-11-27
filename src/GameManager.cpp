@@ -61,6 +61,10 @@ GameManager::~GameManager() {
         Mix_FreeMusic(backgroundMusic);
         backgroundMusic = nullptr;
     }
+    if (levelCompleteSound) {
+        Mix_FreeChunk(levelCompleteSound);
+        levelCompleteSound = nullptr;
+    }
 }
 
 void GameManager::run() {
@@ -103,6 +107,14 @@ int nextMessageScore = 30;
 
     // Stop menu music and load game music
     Mix_HaltMusic();
+    
+    // Load level complete sound effect
+    levelCompleteSound = Mix_LoadWAV("Assets/sound_effects/level_complete1.wav");
+    if (!levelCompleteSound) {
+        std::cerr << "Failed to load level complete sound! Mix_Error: " << Mix_GetError() << std::endl;
+    } else {
+        Mix_VolumeChunk(levelCompleteSound, MIX_MAX_VOLUME / 8);  // Set volume
+    }
     
     // Load game background music
     backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.mp3");
@@ -314,6 +326,10 @@ if (scoreboard->getLevel() == 1) {
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
+                    // Play level complete sound
+                    if (levelCompleteSound) {
+                        Mix_PlayChannel(-1, levelCompleteSound, 0);
+                    }
                     currentLevel = newLevel;
                     
                     // Save litter state before deleting old level
@@ -373,10 +389,18 @@ if (scoreboard->getLevel() == 1) {
                         level = new Level4(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-                        level->setLitterItems(savedLitter);
+                        //level->setLitterItems(savedLitter);  // Keep Level 3 litter for smooth transition
                         level->setEnemyItems(savedEnemies);
                         level->setOilTexture(oilTex);
-                        // Keep level 3 background for level 4
+                        
+                        // Load final level background
+                        SDL_DestroyTexture(ocean);
+                        SDL_Texture* trashCluster = loadTexture(renderer, "Assets/backgrounds/final-level-background2.png");
+                        if (trashCluster) {
+                            ocean = trashCluster;
+                        } else {
+                            std::cerr << "Failed to load final-level-background2.png" << std::endl;
+                        }
                     }
                 }
             }
@@ -393,23 +417,13 @@ if (scoreboard->getLevel() == 1) {
         cameraX += effectiveScrollSpeed;
         if (cameraX >= bgWidth) cameraX -= bgWidth;
 
-        // Apply camera shake in Level 4
-        int shakeX = 0, shakeY = 0;
-        if (currentLevel == 4) {
-            Level4* level4 = dynamic_cast<Level4*>(level);
-            if (level4 && level4->getCameraShake() > 0) {
-                shakeX = (rand() % 11) - 5;  // -5 to +5 pixels
-                shakeY = (rand() % 11) - 5;
-            }
-        }
-
         // Render
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         SDL_Rect srcRect = { 0, 0, bgWidth, bgHeight };
-        SDL_Rect dest1 = { static_cast<int>(-cameraX) + shakeX, shakeY, bgWidth, bgHeight };
-        SDL_Rect dest2 = { static_cast<int>(-cameraX) + bgWidth + shakeX, shakeY, bgWidth, bgHeight };
+        SDL_Rect dest1 = { static_cast<int>(-cameraX), 0, bgWidth, bgHeight };
+        SDL_Rect dest2 = { static_cast<int>(-cameraX) + bgWidth, 0, bgWidth, bgHeight };
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest1);
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest2);
 

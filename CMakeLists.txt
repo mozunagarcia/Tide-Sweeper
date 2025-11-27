@@ -18,7 +18,7 @@ if (WIN32)
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
-        ${SDL2_MIXER_DIR}/include/SDL2     # ← FIXED HERE
+        ${SDL2_MIXER_DIR}/include/SDL2     
     )
 
     link_directories(
@@ -102,7 +102,6 @@ add_executable(TideSweeper
     src/Scoreboard.cpp
     src/Messages.cpp
     src/GameOverScreen.cpp
-    src/TrashCluster.cpp
 )
 
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
