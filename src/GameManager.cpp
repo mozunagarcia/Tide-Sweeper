@@ -27,7 +27,7 @@ static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
 }
 
 GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
-    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr), showingLevel4Intro(false), level4IntroTimer(0), level4IntroBlinkCounter(0)
+    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr), showingLevel4Intro(false), level4IntroTimer(0), level4IntroBlinkCounter(0), levelCompleteSound(nullptr)
 {
     // Create menu 
     menu = new Menu(renderer);
@@ -58,33 +58,63 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
 
 
 // ----- EDIT END -----
-
+level = nullptr;
+submarine = nullptr;
+scoreboard = nullptr;
 
     // We'll initialize game objects when entering the gameplay loop inside run()
 }
 
 GameManager::~GameManager() {
-    delete level;
-    delete submarine;
-    delete scoreboard;
-    delete msgManager;
-    delete menu;
-    
-    // Stop and free music
+
+    if (level) {
+        delete level;
+        level = nullptr;
+    }
+
+    if (submarine) {
+        delete submarine;
+        submarine = nullptr;
+    }
+
+    if (scoreboard) {
+        delete scoreboard;
+        scoreboard = nullptr;
+    }
+
+    if (storyManager) {
+        delete storyManager;
+        storyManager = nullptr;
+    }
+
+    if (msgManager) {
+        delete msgManager;
+        msgManager = nullptr;
+    }
+
+    if (menu) {
+        delete menu;
+        menu = nullptr;
+    }
+
     if (backgroundMusic) {
         Mix_HaltMusic();
         Mix_FreeMusic(backgroundMusic);
         backgroundMusic = nullptr;
     }
+
     if (levelCompleteSound) {
         Mix_FreeChunk(levelCompleteSound);
         levelCompleteSound = nullptr;
     }
+
     if (animalCollisionSound) {
         Mix_FreeChunk(animalCollisionSound);
         animalCollisionSound = nullptr;
     }
 }
+
+
 
 void GameManager::run() {
     // --- MENU LOOP ---
@@ -138,10 +168,10 @@ void GameManager::run() {
 
 
     // --- Load shared textures --- (paths kept identical to original)
-    SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
+    SDL_Texture* ocean = loadTexture(renderer, "Assets/backgrounds/Level1.png");
     SDL_Texture* submarineTex = loadTexture(renderer, "Assets/submarine.png");
     if (!ocean || !submarineTex) {
-        std::cerr << "Missing textures! Place ocean.png and submarine.png in /assets\n";
+        std::cerr << "Missing textures! Place Level1.png and submarine.png in /assets\n";
         return;
     }
     //Radio textures
@@ -224,7 +254,7 @@ void GameManager::run() {
         
         // Reset ocean background to level 1
         SDL_DestroyTexture(ocean);
-        ocean = loadTexture(renderer, "Assets/ocean.png");
+        ocean = loadTexture(renderer, "Assets/backgrounds/Level1.png");
         
         // Recreate Level 1 to properly reset all state
         delete level;
@@ -383,14 +413,14 @@ void GameManager::run() {
                         
                         SDL_DestroyTexture(ocean);
                         //SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
-                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/2ocean.png");
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/Level2.png");
                         if (newOcean) {
                             ocean = newOcean;
                         } else {
                             //SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
-                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/2ocean.png");
+                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/Level2.png");
                             if (altOcean) ocean = altOcean;
-                            else std::cerr << "Failed to load ocean_background: Assets/2ocean.png" << std::endl;
+                            else std::cerr << "Failed to load Level 2background: Assets/Level2.png" << std::endl;
                         }
                     }
                     else if (currentLevel == 3) {
@@ -404,24 +434,24 @@ void GameManager::run() {
                         
                         SDL_DestroyTexture(ocean);
                         // SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
-                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/3ocean.png");
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/Level3.png");
                          if (newOcean) {
                             ocean = newOcean;
                         } else {
                             // SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
-                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/3ocean.png");
+                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/Level3.png");
                             if (altOcean) ocean = altOcean;
-                            else std::cerr << "Failed to load ocean3.png: Assets/3ocean.png" << std::endl;
+                            else std::cerr << "Failed to load ocean3.png: Assets/background/Level3.png" << std::endl;
                         }
                     }
                     else if (currentLevel >= 4) {
                         // Load final level background FIRST
                         SDL_DestroyTexture(ocean);
-                        SDL_Texture* trashCluster = loadTexture(renderer, "Assets/backgrounds/4ocean.png");
+                        SDL_Texture* trashCluster = loadTexture(renderer, "Assets/backgrounds/Level4.png");
                         if (trashCluster) {
                             ocean = trashCluster;
                         } else {
-                            std::cerr << "Failed to load 4ocean.png" << std::endl;
+                            std::cerr << "Failed to load Level4.png" << std::endl;
                         }
                         
                         // Start Level 4 intro sequence
