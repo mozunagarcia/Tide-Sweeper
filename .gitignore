@@ -6,6 +6,9 @@ cmake_install.cmake
 Makefile
 compile_commands.json
 
+# --- External libraries (SDL2) ---
+lib/
+
 # --- Executables & binaries ---
 *.exe
 *.dll

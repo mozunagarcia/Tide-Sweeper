@@ -9,16 +9,16 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # WINDOWS (MinGW)
 if (WIN32)
 
-    set(SDL2_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2-2.32.6/x86_64-w64-mingw32")
-    set(SDL2_IMAGE_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_image-2.8.2/x86_64-w64-mingw32")
-    set(SDL2_TTF_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_ttf-2.24.0/x86_64-w64-mingw32")
-    set(SDL2_MIXER_DIR "C:/Users/ozuna/OneDrive/Documents/Libs/SDL2_mixer-2.8.1/x86_64-w64-mingw32")
+    set(SDL2_DIR "${CMAKE_SOURCE_DIR}/lib/SDL2-2.32.6/x86_64-w64-mingw32")
+    set(SDL2_IMAGE_DIR "${CMAKE_SOURCE_DIR}/lib/SDL2_image-2.8.2/x86_64-w64-mingw32")
+    set(SDL2_TTF_DIR "${CMAKE_SOURCE_DIR}/lib/SDL2_ttf-2.24.0/x86_64-w64-mingw32")
+    set(SDL2_MIXER_DIR "${CMAKE_SOURCE_DIR}/lib/SDL2_mixer-2.8.1/x86_64-w64-mingw32")
 
     include_directories(
         ${SDL2_DIR}/include/SDL2
         ${SDL2_IMAGE_DIR}/include/SDL2
         ${SDL2_TTF_DIR}/include/SDL2
-        ${SDL2_MIXER_DIR}/include/SDL2     # ← FIXED HERE
+        ${SDL2_MIXER_DIR}/include/SDL2     
     )
 
     link_directories(
@@ -36,7 +36,6 @@ if (WIN32)
         SDL2_ttf
         SDL2_mixer
     )
-
 
 # macOS (Homebrew)
 elseif (APPLE)
@@ -89,7 +88,9 @@ else()
     )
 endif()
 
-# Build
+# ===============================================
+#              BUILD MAIN APPLICATION
+# ===============================================
 add_executable(TideSweeper 
     src/main.cpp
     src/ScoreDisplay.cpp
@@ -103,7 +104,6 @@ add_executable(TideSweeper
     src/Messages.cpp
     src/GameOverScreen.cpp
     src/StoryManager.cpp
-    src/TrashCluster.cpp
 )
 
 target_link_libraries(TideSweeper ${EXTRA_LIBS})
@@ -115,3 +115,68 @@ add_custom_command(TARGET TideSweeper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_DEST_DIR}"
 )
+
+# ===============================================
+#                === GOOGLE TEST ===
+# ===============================================
+include(FetchContent)
+
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP true
+)
+
+
+# Recommended on Windows (CRT consistency)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+# Test executable (simple tests without SDL dependencies)
+add_executable(TideSweeperTests
+    Tests/test_example.cpp
+    Tests/test_collision.cpp
+    Tests/test_submarine.cpp
+    Tests/test_litter.cpp
+    Tests/test_level.cpp
+    Tests/test_rendering.cpp
+    # Add source files needed for testing
+    src/Submarine.cpp
+    src/Litter.cpp
+    src/ScoreDisplay.cpp
+)
+
+target_link_libraries(TideSweeperTests
+    PRIVATE
+    gtest
+    gtest_main
+    gmock
+    gmock_main
+    ${EXTRA_LIBS}
+)
+
+# Copy SDL DLLs for tests (Windows only)
+if (WIN32)
+    add_custom_command(TARGET TideSweeperTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_DIR}/bin/SDL2.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_IMAGE_DIR}/bin/SDL2_image.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_TTF_DIR}/bin/SDL2_ttf.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_MIXER_DIR}/bin/SDL2_mixer.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMENT "Copying SDL DLLs for tests..."
+    )
+endif()
+
+# Automatically discover tests
+include(GoogleTest)
+gtest_discover_tests(TideSweeperTests)

@@ -13,7 +13,8 @@ public:
     SDL_Rect getRect() const;
     void startHitBlink();  
     void updateBlink();
-    bool isInvulnerable() const;    
+    bool isInvulnerable() const;
+    void reset();    
 
 private:
     SDL_Texture* texture;

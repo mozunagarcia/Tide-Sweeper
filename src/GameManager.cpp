@@ -27,7 +27,7 @@ static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
 }
 
 GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
-    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr)
+    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr), showingLevel4Intro(false), level4IntroTimer(0), level4IntroBlinkCounter(0)
 {
     // Create menu 
     menu = new Menu(renderer);
@@ -76,6 +76,14 @@ GameManager::~GameManager() {
         Mix_FreeMusic(backgroundMusic);
         backgroundMusic = nullptr;
     }
+    if (levelCompleteSound) {
+        Mix_FreeChunk(levelCompleteSound);
+        levelCompleteSound = nullptr;
+    }
+    if (animalCollisionSound) {
+        Mix_FreeChunk(animalCollisionSound);
+        animalCollisionSound = nullptr;
+    }
 }
 
 void GameManager::run() {
@@ -95,6 +103,22 @@ void GameManager::run() {
 
     // Stop menu music and load game music
     Mix_HaltMusic();
+    
+    // Load level complete sound effect
+    levelCompleteSound = Mix_LoadWAV("Assets/sound_effects/level_complete1.wav");
+    if (!levelCompleteSound) {
+        std::cerr << "Failed to load level complete sound! Mix_Error: " << Mix_GetError() << std::endl;
+    } else {
+        Mix_VolumeChunk(levelCompleteSound, MIX_MAX_VOLUME / 8);  // Set volume
+    }
+    
+    // Load animal collision sound effect
+    animalCollisionSound = Mix_LoadWAV("Assets/sound_effects/animal_collision4.wav");
+    if (!animalCollisionSound) {
+        std::cerr << "Failed to load animal collision sound! Mix_Error: " << Mix_GetError() << std::endl;
+    } else {
+        Mix_VolumeChunk(animalCollisionSound, MIX_MAX_VOLUME / 4);  // Set volume
+    }
     
     // Load game background music
     backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.mp3");
@@ -161,6 +185,7 @@ void GameManager::run() {
     
     // Set oil texture for level 3 blackout effect
     level->setOilTexture(oilTex);
+    level->setAnimalCollisionSound(animalCollisionSound);
 
     //----edit
     storyManager->onLevelChange(1);
@@ -183,6 +208,7 @@ void GameManager::run() {
         lives = 3;
         gameOver = false;
         submarine->setPosition(200, 275);
+        submarine->reset();
         scoreboard->setScore(0);
         scoreboard->resetLevel();
         cameraX = 0.0f;
@@ -194,6 +220,7 @@ void GameManager::run() {
                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
         level->setOilTexture(oilTex);
+        level->setAnimalCollisionSound(animalCollisionSound);
         
         // Reset ocean background to level 1
         SDL_DestroyTexture(ocean);
@@ -205,6 +232,14 @@ void GameManager::run() {
                            { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                            enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
         level->setOilTexture(oilTex);
+        level->setAnimalCollisionSound(animalCollisionSound);
+        
+        // Reset music to start from the beginning
+        if (backgroundMusic) {
+            Mix_RewindMusic();
+            Mix_PlayMusic(backgroundMusic, -1);
+            Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+        }
     };
 
     SDL_Event event;
@@ -284,8 +319,19 @@ void GameManager::run() {
             // Update submarine blink effect
             submarine->updateBlink();
 
-            // Update level (handles litter/enemies and level 3 blackout)
-            level->update(*submarine, *scoreboard, lives, gameOver);
+            // Level 4 intro sequence - pause gameplay
+            if (showingLevel4Intro) {
+                level4IntroTimer++;
+                level4IntroBlinkCounter++;
+                
+                // End intro after 3 seconds (180 frames at 60 FPS)
+                if (level4IntroTimer >= 180) {
+                    showingLevel4Intro = false;
+                }
+            } else {
+                // Normal gameplay - update level
+                level->update(*submarine, *scoreboard, lives, gameOver);
+            }
 
             // --- edit start ---
             storyManager->update(scoreboard->getScore(), scoreboard->getLevel());
@@ -301,6 +347,10 @@ void GameManager::run() {
                     storyManager->onLevelEnd(currentLevel);
                     // --- edit end ---
 
+                    // Play level complete sound
+                    if (levelCompleteSound) {
+                        Mix_PlayChannel(-1, levelCompleteSound, 0);
+                    }
                     currentLevel = newLevel;
                     
                     // Save litter state before deleting old level
@@ -321,6 +371,7 @@ void GameManager::run() {
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
+                        level->setAnimalCollisionSound(animalCollisionSound);
                     }
                     else if (currentLevel == 2) {                 
                         level = new Level2(renderer,
@@ -328,15 +379,18 @@ void GameManager::run() {
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
+                        level->setAnimalCollisionSound(animalCollisionSound);
                         
                         SDL_DestroyTexture(ocean);
-                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
+                        //SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/2ocean.png");
                         if (newOcean) {
                             ocean = newOcean;
                         } else {
-                            SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
+                            //SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
+                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/2ocean.png");
                             if (altOcean) ocean = altOcean;
-                            else std::cerr << "Failed to load ocean_background: Assets/ocean_background.png" << std::endl;
+                            else std::cerr << "Failed to load ocean_background: Assets/2ocean.png" << std::endl;
                         }
                     }
                     else if (currentLevel == 3) {
@@ -346,25 +400,41 @@ void GameManager::run() {
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setOilTexture(oilTex);
+                        level->setAnimalCollisionSound(animalCollisionSound);
                         
                         SDL_DestroyTexture(ocean);
-                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
-                        if (newOcean) {
+                        // SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/3ocean.png");
+                         if (newOcean) {
                             ocean = newOcean;
                         } else {
-                            SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
+                            // SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
+                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/3ocean.png");
                             if (altOcean) ocean = altOcean;
-                            else std::cerr << "Failed to load ocean3.png: Assets/ocean3.png" << std::endl;
+                            else std::cerr << "Failed to load ocean3.png: Assets/3ocean.png" << std::endl;
                         }
                     }
                     else if (currentLevel >= 4) {
+                        // Load final level background FIRST
+                        SDL_DestroyTexture(ocean);
+                        SDL_Texture* trashCluster = loadTexture(renderer, "Assets/backgrounds/4ocean.png");
+                        if (trashCluster) {
+                            ocean = trashCluster;
+                        } else {
+                            std::cerr << "Failed to load 4ocean.png" << std::endl;
+                        }
+                        
+                        // Start Level 4 intro sequence
+                        showingLevel4Intro = true;
+                        level4IntroTimer = 0;
+                        level4IntroBlinkCounter = 0;
+                        
                         level = new Level4(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-                        level->setLitterItems(savedLitter);
-                        level->setEnemyItems(savedEnemies);
+                        //level->setLitterItems(savedLitter);  // Keep Level 3 litter for smooth transition
                         level->setOilTexture(oilTex);
-                        // Keep level 3 background for level 4
+                        level->setAnimalCollisionSound(animalCollisionSound);
                     }
                 }
             }
@@ -381,43 +451,114 @@ void GameManager::run() {
         cameraX += effectiveScrollSpeed;
         if (cameraX >= bgWidth) cameraX -= bgWidth;
 
-        // Apply camera shake in Level 4
-        int shakeX = 0, shakeY = 0;
-        if (currentLevel == 4) {
-            Level4* level4 = dynamic_cast<Level4*>(level);
-            if (level4 && level4->getCameraShake() > 0) {
-                shakeX = (rand() % 11) - 5;  // -5 to +5 pixels
-                shakeY = (rand() % 11) - 5;
-            }
-        }
-
         // Render
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
         SDL_Rect srcRect = { 0, 0, bgWidth, bgHeight };
-        SDL_Rect dest1 = { static_cast<int>(-cameraX) + shakeX, shakeY, bgWidth, bgHeight };
-        SDL_Rect dest2 = { static_cast<int>(-cameraX) + bgWidth + shakeX, shakeY, bgWidth, bgHeight };
+        SDL_Rect dest1 = { static_cast<int>(-cameraX), 0, bgWidth, bgHeight };
+        SDL_Rect dest2 = { static_cast<int>(-cameraX) + bgWidth, 0, bgWidth, bgHeight };
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest1);
         SDL_RenderCopy(renderer, ocean, &srcRect, &dest2);
 
-        level->render();
-        submarine->render(renderer);
-        
-        // Level 3+: Render blackout effects (oil spots and blackout overlay)
-        level->renderBlackoutEffects(*submarine);
-        
-        scoreboard->render();
+        // Level 4 intro overlay
+        if (showingLevel4Intro) {
+            // Render scrolling background animation (moves background)
+            cameraX += scrollSpeed * 2.0f;  // Faster scroll during intro
+            
+            // "Ready, Set, Go" 
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            
+            // Each color shows for 0.5 seconds (30 frames)
+            int phase = level4IntroBlinkCounter / 30;  // 0, 1, 2, 3, 4, 5
+            
+            switch (phase) {
+                case 0:
+                    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 100);    // Red (Ready)
+                    break;
+                case 1:
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);      // Black
+                    break;
+                case 2:
+                    SDL_SetRenderDrawColor(renderer, 255, 255, 0, 100);  // Yellow (Set)
+                    break;
+                case 3:
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);      // Black
+                    break;
+                case 4:
+                    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 100);    // Green (Go)
+                    break;
+                default:
+                    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 100);      // Black
+                    break;
+            }
+            
+            SDL_Rect overlayRect = {0, 0, 800, 600};
+            SDL_RenderFillRect(renderer, &overlayRect);
+            
+            // Render intro text
+            TTF_Font* introFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 32);
+            if (introFont) {
+                SDL_Color textColor = {255, 255, 255, 255};
+                
+                // Line 1: "Final Level"
+                SDL_Surface* line1Surf = TTF_RenderText_Blended(introFont, "Final Level", textColor);
+                if (line1Surf) {
+                    SDL_Texture* line1Tex = SDL_CreateTextureFromSurface(renderer, line1Surf);
+                    if (line1Tex) {
+                        SDL_Rect line1Rect = {400 - line1Surf->w / 2, 200, line1Surf->w, line1Surf->h};
+                        SDL_RenderCopy(renderer, line1Tex, nullptr, &line1Rect);
+                        SDL_DestroyTexture(line1Tex);
+                    }
+                    SDL_FreeSurface(line1Surf);
+                }
+                
+                // Line 2: "Collect as much as you can"
+                SDL_Surface* line2Surf = TTF_RenderText_Blended(introFont, "Collect as much as you can", textColor);
+                if (line2Surf) {
+                    SDL_Texture* line2Tex = SDL_CreateTextureFromSurface(renderer, line2Surf);
+                    if (line2Tex) {
+                        SDL_Rect line2Rect = {400 - line2Surf->w / 2, 260, line2Surf->w, line2Surf->h};
+                        SDL_RenderCopy(renderer, line2Tex, nullptr, &line2Rect);
+                        SDL_DestroyTexture(line2Tex);
+                    }
+                    SDL_FreeSurface(line2Surf);
+                }
+                
+                // Line 3: "before the timer runs out!"
+                SDL_Surface* line3Surf = TTF_RenderText_Blended(introFont, "before the timer runs out!", textColor);
+                if (line3Surf) {
+                    SDL_Texture* line3Tex = SDL_CreateTextureFromSurface(renderer, line3Surf);
+                    if (line3Tex) {
+                        SDL_Rect line3Rect = {400 - line3Surf->w / 2, 320, line3Surf->w, line3Surf->h};
+                        SDL_RenderCopy(renderer, line3Tex, nullptr, &line3Rect);
+                        SDL_DestroyTexture(line3Tex);
+                    }
+                    SDL_FreeSurface(line3Surf);
+                }
+                
+                TTF_CloseFont(introFont);
+            }
+        } else {
+            // Normal gameplay rendering
+            level->render();
+            submarine->render(renderer);
+            
+            // Level 3+: Render blackout effects (oil spots and blackout overlay)
+            level->renderBlackoutEffects(*submarine);
+            
+            scoreboard->render();
 
-        // Draw hearts
-        int heartSizeX = 40;
-        int heartSizeY = 35;
-        int16_t spacing = 5;
-        int startX = 5;
-        int startY = 5;
-        for (int i = 0; i < lives; ++i) {
-            SDL_Rect heartRect = { startX + i * (heartSizeX + spacing), startY, heartSizeX, heartSizeY };
-            if (heartTex) SDL_RenderCopy(renderer, heartTex, nullptr, &heartRect);
+            // Draw hearts
+            int heartSizeX = 40;
+            int heartSizeY = 35;
+            int16_t spacing = 5;
+            int startX = 5;
+            int startY = 5;
+            for (int i = 0; i < lives; ++i) {
+                SDL_Rect heartRect = { startX + i * (heartSizeX + spacing), startY, heartSizeX, heartSizeY };
+                if (heartTex) SDL_RenderCopy(renderer, heartTex, nullptr, &heartRect);
+            }
         }
 
 // ----- EDIT START ----
