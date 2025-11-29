@@ -34,6 +34,12 @@ private:
     bool startGame;
     Mix_Music* backgroundMusic;
     Mix_Chunk* levelCompleteSound;
+    Mix_Chunk* animalCollisionSound;
+    
+    // Level 4 intro sequence
+    bool showingLevel4Intro;
+    int level4IntroTimer;
+    int level4IntroBlinkCounter;
 
     std::vector<std::string> facts;   // Fact strings used in pause + game over
 };

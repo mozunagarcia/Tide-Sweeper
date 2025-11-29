@@ -16,7 +16,7 @@ Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTex
              const std::vector<int>& enemyWidths_, const std::vector<int>& enemyHeights_)
     : renderer(renderer_), enemyTextures(enemyTextures_), enemySpeeds(enemySpeeds_), 
       enemyWidths(enemyWidths_), enemyHeights(enemyHeights_), spawnTimer(0),
-      spawnInterval(120), maxActiveEnemies(2),
+      spawnInterval(120), maxActiveEnemies(2), animalCollisionSound(nullptr),
       oilTexture(nullptr), blackoutNext(0), warningFrameCounter(0), 
       isBlackout(false), isWarning(false), blackoutCounter(0),
       blackoutInterval(600), blackoutWarning(120), blackoutDuration(300), blackoutWidth(0),
@@ -130,6 +130,9 @@ void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
                 submarine.startHitBlink();
                 it->startHitBlink();
                 it->startFalling();
+                if (animalCollisionSound) {
+                    Mix_PlayChannel(-1, animalCollisionSound, 0);
+                }
                 if (lives <= 0) gameOver = true;
                 ++it;
             } else ++it;
@@ -254,6 +257,9 @@ void Level2::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
                 submarine.startHitBlink();
                 it->startHitBlink();
                 it->startFalling();
+                if (animalCollisionSound) {
+                    Mix_PlayChannel(-1, animalCollisionSound, 0);
+                }
                 if (lives <= 0) gameOver = true;
                 ++it;
             } else ++it;
@@ -605,6 +611,9 @@ void Level4::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
                 submarine.startHitBlink();
                 it->startHitBlink();
                 it->startFalling();
+                if (animalCollisionSound) {
+                    Mix_PlayChannel(-1, animalCollisionSound, 0);
+                }
                 if (lives <= 0) gameOver = true;
                 ++it;
             } else ++it;
