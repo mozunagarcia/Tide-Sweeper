@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <vector>
 #include "Litter.h"
 #include "Enemies.h"
@@ -22,6 +23,7 @@ public:
     virtual void renderBlackoutEffects(Submarine& submarine);
     virtual void reset();
     void setOilTexture(SDL_Texture* oilTex);
+    void setAnimalCollisionSound(Mix_Chunk* sound) { animalCollisionSound = sound; }
     void calmEnemies(float subX, float subY, float radius);
     std::vector<Litter>& getLitterItems() { return litterItems; }
     void setLitterItems(const std::vector<Litter>& litter) { litterItems = litter; }
@@ -34,6 +36,7 @@ protected:
     std::vector<Litter> litterItems;
     std::vector<Enemies> enemyItems;
     std::vector<SDL_Texture*> enemyTextures;
+    Mix_Chunk* animalCollisionSound;
     std::vector<float> enemySpeeds;
     std::vector<int> enemyWidths;
     std::vector<int> enemyHeights;

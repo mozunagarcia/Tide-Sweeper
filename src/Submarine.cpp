@@ -65,3 +65,8 @@ void Submarine::updateBlink() {
 bool Submarine::isInvulnerable() const {
     return hitBlinkTimer > 0;
 }
+
+void Submarine::reset() {
+    hitBlinkTimer = 0;
+    facingRight = true;
+}

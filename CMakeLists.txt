@@ -37,7 +37,6 @@ if (WIN32)
         SDL2_mixer
     )
 
-
 # macOS (Homebrew)
 elseif (APPLE)
 
@@ -89,7 +88,9 @@ else()
     )
 endif()
 
-# Build
+# ===============================================
+#              BUILD MAIN APPLICATION
+# ===============================================
 add_executable(TideSweeper 
     src/main.cpp
     src/ScoreDisplay.cpp
@@ -114,3 +115,68 @@ add_custom_command(TARGET TideSweeper POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${ASSETS_DEST_DIR}"
     COMMAND ${CMAKE_COMMAND} -E copy_directory "${ASSETS_SOURCE_DIR}" "${ASSETS_DEST_DIR}"
 )
+
+# ===============================================
+#                === GOOGLE TEST ===
+# ===============================================
+include(FetchContent)
+
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP true
+)
+
+
+# Recommended on Windows (CRT consistency)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+# Test executable (simple tests without SDL dependencies)
+add_executable(TideSweeperTests
+    Tests/test_example.cpp
+    Tests/test_collision.cpp
+    Tests/test_submarine.cpp
+    Tests/test_litter.cpp
+    Tests/test_level.cpp
+    Tests/test_rendering.cpp
+    # Add source files needed for testing
+    src/Submarine.cpp
+    src/Litter.cpp
+    src/ScoreDisplay.cpp
+)
+
+target_link_libraries(TideSweeperTests
+    PRIVATE
+    gtest
+    gtest_main
+    gmock
+    gmock_main
+    ${EXTRA_LIBS}
+)
+
+# Copy SDL DLLs for tests (Windows only)
+if (WIN32)
+    add_custom_command(TARGET TideSweeperTests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_DIR}/bin/SDL2.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_IMAGE_DIR}/bin/SDL2_image.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_TTF_DIR}/bin/SDL2_ttf.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL2_MIXER_DIR}/bin/SDL2_mixer.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}"
+        COMMENT "Copying SDL DLLs for tests..."
+    )
+endif()
+
+# Automatically discover tests
+include(GoogleTest)
+gtest_discover_tests(TideSweeperTests)
