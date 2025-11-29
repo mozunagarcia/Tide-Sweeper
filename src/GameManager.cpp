@@ -27,43 +27,50 @@ static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
 }
 
 GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
-    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr), showingLevel4Intro(false), level4IntroTimer(0), level4IntroBlinkCounter(0), levelCompleteSound(nullptr)
+    : window(window_),
+      renderer(renderer_),
+      level(nullptr),
+      submarine(nullptr),
+      scoreboard(nullptr),
+      messages(nullptr),
+      menu(nullptr),
+      running(true),
+      startGame(false),
+      backgroundMusic(nullptr),
+      levelCompleteSound(nullptr),   // IMPORTANT FIX
+      animalCollisionSound(nullptr), // IMPORTANT FIX
+      showingLevel4Intro(false),
+      level4IntroTimer(0),
+      level4IntroBlinkCounter(0)
 {
     // Create menu 
     menu = new Menu(renderer);
-    
-// ----- EDIT START -----
+
+    // ----- EDIT START -----
     // Initialize upgraded Messages system
     msgManager = new Messages(renderer);
     storyManager = new StoryManager(msgManager);
 
-
     facts = {
-    "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
-    "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
-    "Ghost nets make up a major part of ocean plastic and trap animals for years.",
-    "Illegal dumping harms marine life and destroys fragile ecosystems.",
-    "Over 8 million tons of plastic enter the ocean every year.",
-    "Microplastics have been found in Arctic snow and deep-sea trenches.",
-    "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
-    "Coral reefs can get sick from chemicals in sunscreen or plastic waste.",
-    "Around 700 marine species are harmed by plastic pollution.",
-    "The Great Pacific Garbage Patch is larger than Texas.",
-    "Some plastics absorb toxic chemicals and become more dangerous to animals.",
-    "Cigarette filters are the most common litter found on beaches.",
-    "One liter of oil can pollute up to one million liters of seawater.",
-    "The ocean floor contains millions of tons of trash, including lost cargo.",
-    "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
-};
-
-
-// ----- EDIT END -----
-level = nullptr;
-submarine = nullptr;
-scoreboard = nullptr;
-
-    // We'll initialize game objects when entering the gameplay loop inside run()
+        "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
+        "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
+        "Ghost nets make up a major part of ocean plastic and trap animals for years.",
+        "Illegal dumping harms marine life and destroys fragile ecosystems.",
+        "Over 8 million tons of plastic enter the ocean every year.",
+        "Microplastics have been found in Arctic snow and deep-sea trenches.",
+        "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
+        "Coral reefs can get sick from chemicals in sunscreen or plastic waste.",
+        "Around 700 marine species are harmed by plastic pollution.",
+        "The Great Pacific Garbage Patch is larger than Texas.",
+        "Some plastics absorb toxic chemicals and become more dangerous to animals.",
+        "Cigarette filters are the most common litter found on beaches.",
+        "One liter of oil can pollute up to one million liters of seawater.",
+        "The ocean floor contains millions of tons of trash, including lost cargo.",
+        "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
+    };
+    // ----- EDIT END -----
 }
+
 
 GameManager::~GameManager() {
 
