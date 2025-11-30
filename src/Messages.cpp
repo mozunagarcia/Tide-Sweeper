@@ -25,11 +25,22 @@ Messages::~Messages() {
 }
 
 void Messages::setStyle(MessageStyle s) {
+
+    // If switching TO CUTSCENE, reset everything
+    if (s == MessageStyle::CUTSCENE && style != MessageStyle::CUTSCENE) {
+        typewriterActive = false;
+        visibleText.clear();
+        fullText.clear();
+    }
+
+    // If switching TO RADIO but already RADIO → DO NOTHING
+    if (s == MessageStyle::RADIO && style == MessageStyle::RADIO) {
+        return;
+    }
+
     style = s;
-    typewriterActive = false;
-    visibleText.clear();
-    fullText.clear();
 }
+
 
 void Messages::loadMessageList(const std::vector<std::string>& msgs) {
     messageList = msgs;
@@ -59,7 +70,8 @@ void Messages::start() {
 void Messages::startTypewriter(const std::string& text) {
     style = MessageStyle::RADIO;
     fullText = text;
-    visibleText = "";
+
+    // Leave old text visible until typewriter starts typing
     charIndex = 0;
     typewriterActive = true;
     typeStart = SDL_GetTicks();
@@ -72,6 +84,7 @@ void Messages::startTypewriter(const std::string& text) {
     }
 }
 
+
 SDL_Texture* Messages::createTexture(const std::string& text) {
     SDL_Color white = {255, 255, 255};
     SDL_Surface* surf = TTF_RenderText_Blended_Wrapped(font, text.c_str(), white, 480);
@@ -82,36 +95,85 @@ SDL_Texture* Messages::createTexture(const std::string& text) {
     return tex;
 }
 
-void Messages::update() {
-    if (!active) return;
+void Messages::update() 
+{
+    Uint32 now = SDL_GetTicks();
 
-    // ---------------------------------------
-    // RADIO TYPEWRITER
-    // ---------------------------------------
-    if (style == MessageStyle::RADIO) {
-        if (!typewriterActive) return;
+    // ============================================================
+    //  QUEUE + COOLDOWN SYSTEM (only applies to RADIO messages)
+    // ============================================================
 
-        Uint32 now = SDL_GetTicks();
-        float elapsed = (now - typeStart) / 1000.0f;
+    // If radio finished typing and not yet cooling
+    if (style == MessageStyle::RADIO && active && !typewriterActive && !cooldownActive)
+    {
+        cooldownActive = true;
+        messageFinishTime = now;
+    }
 
-        int shouldShow = int(elapsed * charsPerSecond);
-        if (shouldShow > charIndex &&
-            charIndex < (int)fullText.size())
+    // Handle the cooldown timer (minimum readable time)
+    if (cooldownActive)
+    {
+
+        if (now - messageFinishTime >= 1000)  // 1 second cooldown
         {
-            charIndex = shouldShow;
-            visibleText = fullText.substr(0, charIndex);
+            cooldownActive = false;
+            active = false;
+
         }
 
-        if (charIndex >= (int)fullText.size())
-            typewriterActive = false;
+        else
+        {
+            return; // still waiting
+        }
+    }
 
+    // If we are idle and messages are waiting, start next
+    if (!active && !pendingMessages.empty())
+    {
+        std::string next = pendingMessages.front();
+        pendingMessages.pop();
+
+        cooldownActive = false; 
+
+        setStyle(MessageStyle::RADIO);
+        startTypewriter(next);
+        active = true;
         return;
     }
 
-    // ---------------------------------------
-    // CUTSCENE SLIDE-IN ANIMATION
-    // ---------------------------------------
-    Uint32 now = SDL_GetTicks();
+    // ============================================================
+    //  RADIO TYPEWRITER MODE (unchanged)
+    // ============================================================
+    if (style == MessageStyle::RADIO)
+    {
+        // Only advance if we are typing
+        if (typewriterActive)
+        {
+            float elapsed = (now - typeStart) / 1000.0f;
+            int shouldShow = int(elapsed * charsPerSecond);
+
+            if (shouldShow > charIndex &&
+                charIndex < (int)fullText.size())
+            {
+                charIndex = shouldShow;
+                visibleText = fullText.substr(0, charIndex);
+            }
+
+            if (charIndex >= (int)fullText.size())
+            {
+                typewriterActive = false;
+                // DO NOT RETURN — let cooldown logic execute above
+            }
+        }
+
+        // Do NOT return here — cooldown + queue logic must execute
+        return;
+    }
+
+
+    // ============================================================
+    //  CUTSCENE MODE (your original code untouched)
+    // ============================================================
     Uint32 elapsed = now - startTime;
     const Uint32 fadeTime = 400;
 
@@ -163,19 +225,19 @@ void Messages::update() {
         SDL_SetTextureAlphaMod(currentMessage, Uint8(alpha));
 }
 
+
 void Messages::render() {
-    if (!active) return;
 
     // ---------------------------------------
     // RADIO FIXED PANEL
     // ---------------------------------------
     if (style == MessageStyle::RADIO) {
-        int xPos = 80;
-        int yPos = 500;
+        int xPos = 90;
+        int yPos = 520;
 
         // --- RADIO SPRITE ---
     if (radioTexture) {
-        SDL_Rect radioRect = { 10, yPos - 8, 70, 70 }; // adjust to size you want
+        SDL_Rect radioRect = { 10, yPos - 12, 70, 70 }; // adjust to size you want
         SDL_RenderCopy(renderer, radioTexture, NULL, &radioRect);
     }
 
@@ -192,7 +254,7 @@ void Messages::render() {
 
         if (surf) {
             SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-            SDL_Rect txt = { xPos + 10, yPos + 10, surf->w, surf->h };
+            SDL_Rect txt = { xPos + 10, yPos + 15, surf->w, surf->h };
             SDL_RenderCopy(renderer, tex, NULL, &txt);
 
             SDL_FreeSurface(surf);
@@ -209,3 +271,38 @@ void Messages::render() {
         SDL_RenderCopy(renderer, currentMessage, NULL, &rect);
     }
 }
+
+void Messages::clear() {
+    active = false;
+    typewriterActive = false;
+
+    messageList.clear();
+    visibleText.clear();
+    fullText.clear();
+
+    currentIndex = -1;
+    charIndex = 0;
+
+    // Correct idle/reset state
+    state = DONE;  
+    x = -400;
+    alpha = 0;
+
+    if (currentMessage) {
+        SDL_DestroyTexture(currentMessage);
+        currentMessage = nullptr;
+    }
+}
+
+
+void Messages::reset() {
+    clear();
+
+    startTime = 0;
+    typeStart = 0;
+
+    radioW = 0;
+    radioH = 0;
+}
+
+

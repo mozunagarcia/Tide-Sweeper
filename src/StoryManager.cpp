@@ -7,84 +7,68 @@ StoryManager::StoryManager(Messages* msg)
 {
     levels.resize(5);
 
-    // LEVEL 1 — Tutorial
-
+    // ----------------------
+    // LEVEL 1 (3 messages)
+    // ----------------------
     levels[1].zoneName = "Entering Zone: Coastal Trash Vortex";
-    levels[1].radioIntro = {
-        "This area is safe, perfect for training.",
-    };
+    levels[1].radioIntro = { "This area is safe, perfect for training." };
     levels[1].milestones = {
-        "Current shift detected, adjust your route.",
-        "Handling improving, keep steady."
+        "Current shift detected, adjust your route."
     };
-    levels[1].endMessage = "Tutorial complete. Wildlife signals detected.";
+    levels[1].endMessage = "Wildlife signals detected.";
 
-    levels[1].intro.lines = {
-        "Welcome, operator.",
-        "Unusual current patterns are destabilizing the region.",
-        "Your task is to investigate each affected area.",
-        "Use this zone to learn navigation and debris collection."
-    };
-    levels[1].intro.playsBeforeLevel = true;
-
-
-
-    // LEVEL 2 — Wildlife Disturbance
-    levels[2].zoneName = "Entering Zone: Wildlife Disturbance Front";
+    // ----------------------
+    // LEVEL 2 (5 messages)
+    // Intro + first animal + milestone + end
+    // ----------------------
+    levels[2].zoneName = "Entering Zone: Wildlife Disturbance";
     levels[2].radioIntro = {
-        "Animals are fleeing deeper waters.",
-        "Something is disturbing their migration patterns."
+        "Animals are fleeing deeper waters."
     };
     levels[2].milestones = {
-        "Sharp movement detected, keep distance.",
-        "Large creature ahead, maintain respectful spacing.",
         "Debris concentration rising, navigate carefully."
     };
     levels[2].endMessage = "Disturbances intensifying... cause still unknown.";
 
-
-
-
-    // LEVEL 3 — Oil Spill Corridor
+    // ----------------------
+    // LEVEL 3 (5 messages)
+    // Intro + first oil + milestone + end
+    // ----------------------
     levels[3].zoneName = "Entering Zone: Oil Spill Corridor";
     levels[3].radioIntro = {
-        "We've traced the source of the wildlife panic.",
-        "A damaged pipeline is leaking oil into the deep zone.",
-        "Visibility will be reduced, proceed cautiously."
+        "Visibility reduced, oil detected in surrounding waters."
     };
     levels[3].milestones = {
-        "Oil density rising, watch your surroundings.",
-        "Contaminated debris incoming, adjust course.",
-        "Marine life struggling, tread carefully."
+        "Contaminated debris incoming, adjust course."
     };
     levels[3].endMessage = "Oil spread worsening, conditions unstable.";
 
+    // ----------------------
+    // LEVEL 4 (3 messages)
+    // Intro + milestone + end
+    // ----------------------
+    // ----------------------
+// LEVEL 4 (timer-driven)
+// ----------------------
+levels[4].zoneName = "Entering Zone: Illegal Dumping Grounds";
+levels[4].radioIntro = {
+    "Source of contamination ahead, stay focused."
+};
 
+// Timer milestones trigger at 20s, 10s, 5s left
+levels[4].timeTriggers = { 25, 20, 15, 10, 5 };
 
+levels[4].milestones = {
+    "Storm intensifying, sweep fast!",
+    "Collect, collect, collect!",
+    "Halfway there, debris flooding in!",
+    "Getting close, keep collecting!",
+    "Final surge, grab everything you can!"
+};
 
-    // LEVEL 4 — Illegal Dumping Grounds (Final)
-    levels[4].zoneName = "Entering Zone: Illegal Dumping Grounds";
-    levels[4].radioIntro = {
-        "This is it, the source of the contamination.",
-        "Unauthorized dumping systems detected ahead.",
-        "Shut them down before more damage occurs."
-    };
-    levels[4].milestones = {
-        "Hazard barrels detected, void collisions.",
-        "Active dumping overhead, watch for falling debris.",
-        "Toxic surge detected, hold steady."
-    };
-    levels[4].endMessage = "Dumping operations disabled, contamination declining.";
+levels[4].endMessage = "Cleanup complete. Returning to safer waters.";
 
-    levels[4].outro.lines = {
-        "Sector secured.",
-        "Currents stabilizing and wildlife returning.",
-        "Mission complete, excellent work."
-    };
-    levels[4].outro.playsAfterLevel = true;
 }
-
-
 
 void StoryManager::reset()
 {
@@ -93,100 +77,119 @@ void StoryManager::reset()
         L.nextScore = 30;
         L.milestoneIndex = 0;
     }
+
+    animalMessagePlayed  = false;
+    oilMessagePlayed     = false;
+    endMessagePlayed     = false;
+
     lvlChangeActive = false;
     currentLevel = 1;
+    
+    levels[1].endScore = 80;
+    levels[2].endScore = 180;
+    levels[3].endScore = 380;
+    levels[4].endScore = 1000;
 }
 
-
-
-
-// CUTSCENE (slides from left)
-void StoryManager::playCutscene(const Cutscene& cs)
-{
-    if (cs.lines.empty()) return;
-
-    messages->setStyle(MessageStyle::CUTSCENE);
-    messages->loadMessageList(cs.lines);
-    messages->start();
-}
-
-
-
-
-// LEVEL START
 void StoryManager::onLevelChange(int newLevel)
 {
     currentLevel = newLevel;
+
+    animalMessagePlayed = false;
+    oilMessagePlayed = false;
+    endMessagePlayed = false;
+
     auto& L = levels[newLevel];
 
-    // HUD (top-left)
     lvlChangeText = L.zoneName;
     lvlChangeStart = SDL_GetTicks();
     lvlChangeActive = true;
 
-    // Play cutscene if this level has one
-    if (L.intro.playsBeforeLevel)
-        playCutscene(L.intro);
 
-    // Radio intro
-    if (!L.radioIntro.empty())
-    {
-        messages->setStyle(MessageStyle::RADIO);
-        messages->loadMessageList(L.radioIntro);
-        messages->start();
-    }
+    messages->setStyle(MessageStyle::RADIO);
+    messages->queueMessage(L.radioIntro[0]);
 }
-
-
-
-// LEVEL END
 
 void StoryManager::onLevelEnd(int oldLevel)
 {
     auto& L = levels[oldLevel];
 
-    // HUD (top-left)
     lvlChangeText = L.endMessage;
     lvlChangeStart = SDL_GetTicks();
     lvlChangeActive = true;
-
-    // Cutscene for final mission
-    if (L.outro.playsAfterLevel)
-        playCutscene(L.outro);
-
-    // Radio end message
-    if (!L.endMessage.empty())
-    {
-        messages->setStyle(MessageStyle::RADIO);
-        messages->loadMessageList({ L.endMessage });
-        messages->start();
-    }
 }
 
+void StoryManager::onFirstAnimal()
+{
+    if (animalMessagePlayed) return;
+    if (messages->isTypewriting()) return;
 
 
-//
-// MID-LEVEL MILESTONES
-//
-void StoryManager::update(int score, int level)
+    animalMessagePlayed = true;
+
+    messages->setStyle(MessageStyle::RADIO);
+    messages->queuePriorityMessage("Marine life detected, maintain distance.");
+}
+
+void StoryManager::onOilDetected()
+{
+    if (oilMessagePlayed) return;
+
+    oilMessagePlayed = true;
+
+    messages->setStyle(MessageStyle::RADIO);
+    messages->queuePriorityMessage("Oil slick detected, visibility compromised.");
+}
+
+void StoryManager::update(int score, int level, int timeRemaining)
 {
     auto& L = levels[level];
 
-    if (score >= L.nextScore &&
-        L.milestoneIndex < (int)L.milestones.size())
+    // ---------- LEVEL 4 TIMER-BASED TRIGGERS ----------
+    if (level == 4)
     {
-        messages->setStyle(MessageStyle::RADIO);
-        messages->loadMessageList({ L.milestones[L.milestoneIndex] });
-        messages->start();
+        Level4* lv4 = dynamic_cast<Level4*>(currentLevelPtr);
 
-        L.milestoneIndex++;
-        L.nextScore += 30;
+        if (lv4)
+        {
+            int timeLeftSec = lv4->getStormTimer() / 60;
+
+            if (L.timeIndex < (int)L.timeTriggers.size() &&
+                timeLeftSec <= L.timeTriggers[L.timeIndex])
+            {
+                messages->setStyle(MessageStyle::RADIO);
+                messages->queueMessage(L.milestones[L.timeIndex]);
+
+                L.timeIndex++;
+            }
+        }
+    }
+
+
+    // ---------- NORMAL SCORE TRIGGERS (levels 1–3) ----------
+    if (level != 4)        // prevent overlap
+    {
+        if (score >= L.nextScore &&
+            L.milestoneIndex < (int)L.milestones.size())
+        {
+            messages->setStyle(MessageStyle::RADIO);
+            messages->queueMessage(L.milestones[L.milestoneIndex]);
+
+            L.milestoneIndex++;
+            L.nextScore += 30;
+        }
+
+        if (!endMessagePlayed && score >= L.endScore)
+        {
+            endMessagePlayed = true;
+
+            messages->setStyle(MessageStyle::RADIO);
+            messages->queueMessage(L.endMessage);
+        }
     }
 }
 
 
-
-// HUD ZONE NAME / END MESSAGE BANNER
 void StoryManager::renderLevelChange(SDL_Renderer* renderer)
 {
     if (!lvlChangeActive || lvlChangeText.empty()) return;
@@ -208,24 +211,38 @@ void StoryManager::renderLevelChange(SDL_Renderer* renderer)
     int w = surf->w;
     int h = surf->h;
 
-    //  POSITION HUD ABOVE RADIO
-    
-    int radioY = 500;     // radio panel Y
-    int padding = 10;     // spacing between HUD and radio
-
-    int hudY = radioY - (h + 20) - padding;
-
-    SDL_Rect bg = { 20, hudY, w + 40, h + 20 };
+    SDL_Rect bg = { 20, 460, w + 40, h + 20 };
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
     SDL_RenderFillRect(renderer, &bg);
 
-    SDL_Rect txt = { bg.x + 20, bg.y + 10, w, h };
+//--edit--
+SDL_Rect txt = { bg.x + 20, bg.y + 10, w, h };
+
+// TIMING
+Uint32 elapsed  = now - lvlChangeStart;
+
+// ---- 1. FULLY VISIBLE FOR FIRST 3 SECONDS ----
+if (elapsed < 3000)  
+{
+    SDL_SetTextureAlphaMod(tex, 255);   // fully visible
     SDL_RenderCopy(renderer, tex, NULL, &txt);
+}
+else
+{
+    // ---- 2. FINAL 0.5 SECOND FLICKER ----
+    // Flickers every 60ms
+    bool flickerOn = ((now / 60) % 2) == 0;
+
+    SDL_SetTextureAlphaMod(tex, flickerOn ? 255 : 0);
+
+    if (flickerOn)
+        SDL_RenderCopy(renderer, tex, NULL, &txt);
+}
+//--edit--
 
     SDL_FreeSurface(surf);
     SDL_DestroyTexture(tex);
     TTF_CloseFont(font);
 }
-

@@ -30,6 +30,8 @@ public:
     std::vector<Enemies>& getEnemyItems() { return enemyItems; }
     void setEnemyItems(const std::vector<Enemies>& enemies) { enemyItems = enemies; }
     bool isInBlackout() const { return isBlackout; }
+    bool isOilWarning() const { return isWarning; }
+
 
 protected:
     SDL_Renderer* renderer;

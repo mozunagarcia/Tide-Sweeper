@@ -50,6 +50,7 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
     // Initialize upgraded Messages system
     msgManager = new Messages(renderer);
     storyManager = new StoryManager(msgManager);
+    storyManager->reset();
 
     facts = {
         "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
@@ -70,7 +71,6 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
     };
     // ----- EDIT END -----
 }
-
 
 GameManager::~GameManager() {
 
@@ -220,6 +220,8 @@ void GameManager::run() {
                        { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                        enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
     
+    storyManager->setLevelPointer(level);
+
     // Set oil texture for level 3 blackout effect
     level->setOilTexture(oilTex);
     level->setAnimalCollisionSound(animalCollisionSound);
@@ -240,7 +242,10 @@ void GameManager::run() {
     // Reset function
     auto resetGame = [&]() {
         //edit
-        storyManager->reset(); 
+        storyManager->onLevelChange(1);
+        msgManager->reset();
+        msgManager->update();
+
         //edit
         lives = 3;
         gameOver = false;
@@ -256,8 +261,10 @@ void GameManager::run() {
         level = new Level1(renderer,
                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-        level->setOilTexture(oilTex);
-        level->setAnimalCollisionSound(animalCollisionSound);
+       
+       storyManager->setLevelPointer(level);
+       level->setOilTexture(oilTex);
+       level->setAnimalCollisionSound(animalCollisionSound);
         
         // Reset ocean background to level 1
         SDL_DestroyTexture(ocean);
@@ -268,9 +275,12 @@ void GameManager::run() {
         level = new Level1(renderer,
                            { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                            enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+        
+        storyManager->setLevelPointer(level);
+
         level->setOilTexture(oilTex);
         level->setAnimalCollisionSound(animalCollisionSound);
-        
+
         // Reset music to start from the beginning
         if (backgroundMusic) {
             Mix_RewindMusic();
@@ -371,7 +381,43 @@ void GameManager::run() {
             }
 
             // --- edit start ---
-            storyManager->update(scoreboard->getScore(), scoreboard->getLevel());
+            int timeRemaining = 0;
+            
+            // If level 4, get the timer
+            if (currentLevel == 4)
+            {
+                Level4* lvl4 = dynamic_cast<Level4*>(level);
+                if (lvl4) {
+                    timeRemaining = lvl4->getStormTimer() / 60; // convert frames → seconds
+                }
+            }
+
+            storyManager->update(scoreboard->getScore(), scoreboard->getLevel(), timeRemaining);
+
+            // ---- FIRST ANIMAL DETECTION (Level 2) ----
+            if (currentLevel == 2 && !storyManager->animalMessagePlayed)
+            {
+                // If enemies exist, an animal has spawned
+                if (!level->getEnemyItems().empty())
+                {
+                    storyManager->onFirstAnimal();
+                }
+            }
+
+            // ---- FIRST OIL SLICK DETECTION (Level 3) ----
+            if (currentLevel == 3 && !storyManager->oilMessagePlayed)
+            {
+                 Level3* level3 = dynamic_cast<Level3*>(level);
+            if (level3)
+            {
+                // Oil slick begins the moment the warning phase activates
+                if (level3->isOilWarning())
+                {
+                    storyManager->onOilDetected();
+                }
+            }
+            }
+
             // --- edit end ---
 
             
@@ -406,7 +452,9 @@ void GameManager::run() {
                         level = new Level1(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-                        level->setLitterItems(savedLitter);
+                       storyManager->setLevelPointer(level);
+
+                       level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setAnimalCollisionSound(animalCollisionSound);
                     }
@@ -414,6 +462,8 @@ void GameManager::run() {
                         level = new Level2(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                        storyManager->setLevelPointer(level);
+
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setAnimalCollisionSound(animalCollisionSound);
@@ -434,6 +484,8 @@ void GameManager::run() {
                         level = new Level3(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                       storyManager->setLevelPointer(level);
+
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setOilTexture(oilTex);
@@ -470,6 +522,8 @@ void GameManager::run() {
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
                         //level->setLitterItems(savedLitter);  // Keep Level 3 litter for smooth transition
+                        storyManager->setLevelPointer(level);
+
                         level->setOilTexture(oilTex);
                         level->setAnimalCollisionSound(animalCollisionSound);
                     }

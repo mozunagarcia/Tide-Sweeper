@@ -3,6 +3,7 @@
 #include <SDL_ttf.h>
 #include <vector>
 #include <string>
+#include <queue>
 
 enum class MessageStyle {
     RADIO,
@@ -19,8 +20,31 @@ public:
     void update();
     void render();
     void setStyle(MessageStyle s);
+    void clear();
+    void reset();
 
-    bool isActive() const { return active; }
+    bool isActive() const { return active && (typewriterActive || !visibleText.empty());}
+    bool isTypewriting() const { return typewriterActive; }
+
+    // --- NEW QUEUE FUNCTIONS ---
+    void queueMessage(const std::string& msg) {
+        pendingMessages.push(msg);
+    }
+
+    void queuePriorityMessage(const std::string& msg) {
+        std::queue<std::string> newQ;
+        newQ.push(msg);
+        while (!pendingMessages.empty()) {
+            newQ.push(pendingMessages.front());
+            pendingMessages.pop();
+        }
+        pendingMessages = newQ;
+
+        // ⭐ allow immediate interruption
+        cooldownActive = false;
+        active = false;
+    }
+
 
 private:
     SDL_Texture* createTexture(const std::string& text);
@@ -44,6 +68,11 @@ private:
     int radioW = 380;
     int radioH = 80;
 
+    // --- NEW QUEUE VARIABLES ---
+    std::queue<std::string> pendingMessages;
+    Uint32 messageFinishTime = 0;
+    bool cooldownActive = false;
+
     // --- Cutscene ---
     std::vector<std::string> messageList;
     SDL_Texture* currentMessage = nullptr;
@@ -55,7 +84,7 @@ private:
 
     bool active = false;
 
-    enum State { SLIDE_IN, VISIBLE, SLIDE_OUT, DONE };
+    enum State { NONE, SLIDE_IN, VISIBLE, SLIDE_OUT, DONE };
     State state = DONE;
 
     float x = -400;
