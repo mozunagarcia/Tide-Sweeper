@@ -1,10 +1,12 @@
 #include "Litter.h"
 #include <cstdlib>
 
-Litter::Litter(SDL_Texture* tex, float startX, float startY, float moveSpeed)
-    : texture(tex), x(startX), y(startY), speed(moveSpeed), active(true), respawnTimer(0) 
+Litter::Litter(SDL_Texture* tex, float startX, float startY, float moveSpeed, int w, int h)
+    : texture(tex), x(startX), y(startY), speed(moveSpeed), 
+      active(true), respawnTimer(0), width(w), height(h)
 {
 }
+
 
 bool Litter::update() {
     if (!active) {
@@ -34,13 +36,13 @@ bool Litter::update() {
 
 void Litter::render(SDL_Renderer* renderer) {
     if (!active) return;
-    SDL_Rect dest = { static_cast<int>(x), static_cast<int>(y), 90, 90 };
+    SDL_Rect dest = { (int)x, (int)y, width, height };
     SDL_RenderCopy(renderer, texture, nullptr, &dest);
 }
 
 bool Litter::checkCollision(const SDL_Rect& subRect) {
     if (!active) return false;
-    SDL_Rect litterRect = { static_cast<int>(x), static_cast<int>(y), 64, 64 };
+    SDL_Rect litterRect = { (int)x, (int)y, width, height };
     return (subRect.x < litterRect.x + litterRect.w &&
             subRect.x + subRect.w > litterRect.x &&
             subRect.y < litterRect.y + litterRect.h &&

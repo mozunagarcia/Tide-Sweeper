@@ -126,6 +126,9 @@ public:
     int getStormTimer() const { return stormTimer; }
     float getScrollOffset() const { return scrollOffset; }
     int getCameraShake() const { return cameraShakeFrames; }
+    std::vector<int> scaledWidths;
+    std::vector<int> scaledHeights;
+
 
 private:
     int stormTimer;           // Countdown timer in frames (60 fps)
