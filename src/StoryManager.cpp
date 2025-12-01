@@ -9,53 +9,53 @@ StoryManager::StoryManager(Messages* msg)
 
 
     // LEVEL 1 (3 messages)
-    levels[1].zoneName = "Entering Zone: Coastal Trash Vortex";
-    levels[1].radioIntro = { "This area is safe, perfect for training." };
+    levels[1].zoneName = "Entering Zone: Coastal Litter Zone";
+    levels[1].radioIntro = { "Scanning conditions. Low threat. Begin your sweep." };
     levels[1].milestones = {
-        "Current shift detected, adjust your route."
+        "Currents shifting. Adjust your heading."
     };
-    levels[1].endMessage = "Wildlife signals detected.";
+    levels[1].endMessage = "Picking up early wildlife activity. Proceed to next zone.";
 
     // LEVEL 2 (5 messages)
     // Intro + first animal + milestone + end
 
     levels[2].zoneName = "Entering Zone: Wildlife Disturbance";
     levels[2].radioIntro = {
-        "Animals are fleeing deeper waters."
+        "Animal patterns are erratic. Stay alert."
     };
     levels[2].milestones = {
-        "Debris concentration rising, navigate carefully."
+        "Debris density rising ahead. Navigate with care."
     };
-    levels[2].endMessage = "Disturbances intensifying... cause still unknown.";
+    levels[2].endMessage = "Disturbance levels climbing. Source still unknown.";
 
     // LEVEL 3 (5 messages)
     // Intro + first oil + milestone + end
 
     levels[3].zoneName = "Entering Zone: Oil Spill Corridor";
     levels[3].radioIntro = {
-        "Visibility reduced, oil detected in surrounding waters."
+        "Oil traces confirmed. Visibility will drop."
     };
     levels[3].milestones = {
-        "Contaminated debris incoming, adjust course."
+        "Heavy contaminants approaching. Adjust your course."
     };
-    levels[3].endMessage = "Oil spread worsening, conditions unstable.";
+    levels[3].endMessage = "Oil spread increasing. Situation becoming unstable.";
 
     // LEVEL 4 (timer-driven)
 
     levels[4].zoneName = "Entering Zone: Illegal Dumping Grounds";
     levels[4].radioIntro = {
-        "Source of contamination ahead, stay focused."
+        "We are close to the source. Stay focused."
     };
 
     // Timer milestones trigger 
     levels[4].timeTriggers = { 25, 20, 15, 10, 5 };
 
     levels[4].milestones = {
-        "Storm intensifying, sweep fast!",
+        "Debris surge detected, sweep fast!",
         "Collect, collect, collect!",
         "Halfway there, debris flooding in!",
-        "Getting close, keep collecting!",
-        "Final surge, grab everything you can!"
+        "Getting close, keep sweeping!",
+        "Final push, grab everything you can!"
     };
 
     levels[4].endMessage = "Cleanup complete. Returning to safer waters.";
@@ -64,11 +64,18 @@ StoryManager::StoryManager(Messages* msg)
 
 void StoryManager::reset()
 {
-    for (auto& L : levels)
+    for (int i = 0; i < levels.size(); i++)
     {
-        L.nextScore = 30;
-        L.milestoneIndex = 0;
+        levels[i].milestoneIndex = 0;
+
+        // Default milestone timing
+        levels[i].nextScore = 30;
     }
+
+    // Custom milestone timings
+    levels[2].nextScore = 60;   // level 2 milestone AFTER first animal
+    levels[3].nextScore = 90;   // level 3 milestone AFTER oil warning
+
 
     animalMessagePlayed  = false;
     oilMessagePlayed     = false;

@@ -535,7 +535,7 @@ void ChatUI::loadSonar(const std::string& sonarPath)
         const int briefHeight = 40;
 
         // WIDE SONAR SIZE
-        const int sonarWidth  = 400;   // adjust as you like
+        const int sonarWidth  = 400;   
         const int sonarHeight = 250;
 
         sonarRect.w = sonarWidth;
