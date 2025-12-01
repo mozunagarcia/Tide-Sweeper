@@ -5,7 +5,7 @@ GameOverScreen::GameOverScreen(SDL_Renderer* renderer, SDL_Texture* bg)
     : renderer(renderer), background(bg), hoveredIndex(-1)
 {
     fontLarge = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 48);
-    fontSmall = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 28);
+    fontSmall = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 30);
 
     if (!fontLarge || !fontSmall) {
         std::cerr << "GameOverScreen Font Load Error: "
@@ -34,7 +34,7 @@ bool GameOverScreen::isInside(const SDL_Rect& r, int x, int y) {
             y >= r.y && y <= r.y + r.h);
 }
 
-    void GameOverScreen::render(const std::string& title,
+void GameOverScreen::render(const std::string& title,
                             const std::string& fact,
                             bool showResume,
                             float countdownRatio)
@@ -112,12 +112,53 @@ bool GameOverScreen::isInside(const SDL_Rect& r, int x, int y) {
         SDL_DestroyTexture(tt2);
     };
 
+    int spacing = 20;          // space between buttons
+    int bw = restartBtn.rect.w;
+    int bh = restartBtn.rect.h;
+    int baseY = 430;
+
+    // ---- RESUME BUTTON ----
+    if (showResume) {
+        resumeBtn.rect.x = (800 - bw) / 2;  // centered
+        resumeBtn.rect.y = baseY - 100;     // stays where you like it
+    }
+
+    // ---- OTHER BUTTONS ----
+    if (showResume) {
+        // align Restart, Menu, Exit UNDER resume, centered as a group
+        int totalWidth = 3 * bw + 2 * spacing;
+        int startX = (800 - totalWidth) / 2;
+
+        restartBtn.rect.x = startX;
+        restartBtn.rect.y = baseY;
+
+        menuBtn.rect.x = startX + bw + spacing;
+        menuBtn.rect.y = baseY;
+
+        exitBtn.rect.x = startX + 2 * (bw + spacing);
+        exitBtn.rect.y = baseY;
+    } else {
+        // GAME OVER — no resume → just center the 3 buttons
+        int totalWidth = 3 * bw + 2 * spacing;
+        int startX = (800 - totalWidth) / 2;
+
+        restartBtn.rect.x = startX;
+        restartBtn.rect.y = baseY;
+
+        menuBtn.rect.x = startX + bw + spacing;
+        menuBtn.rect.y = baseY;
+
+        exitBtn.rect.x = startX + 2 * (bw + spacing);
+        exitBtn.rect.y = baseY;
+    }
+
+    // ---- NOW draw ----
     int index = 0;
     if (showResume) drawBtn(resumeBtn, index++);
-
     drawBtn(restartBtn, index++);
     drawBtn(menuBtn, index++);
     drawBtn(exitBtn, index++);
+
 }
 
 std::string GameOverScreen::run(const std::string& title,

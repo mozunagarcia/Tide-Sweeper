@@ -343,6 +343,44 @@ void GameManager::run() {
         running = false;
     }
 
+    //------AUTO VICTORY SCENE----------------------------------
+
+    // ----- DEBUG: Press V to trigger the victory screen instantly -----
+    if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_v) {
+
+        // Stop all gameplay audio
+        Mix_HaltMusic();
+        if (victorySound) {
+            Mix_PlayChannel(-1, victorySound, 0);
+        }
+
+        VictoryScreen vs(renderer);
+
+        // Show victory screen immediately with your real facts & score
+        std::string result = vs.run(scoreboard->getScore());
+
+
+        if (result == "restart") {
+            resetGame();
+            continue;
+        }
+        if (result == "menu") {
+            resetGame();
+            startGame = false;
+            return;
+        }
+        if (result == "exit") {
+            running = false;
+            break;
+        }
+    }
+
+
+    //------AUTO VICTORY SCENE----------------------------------
+
+
+
+
     // ----- PAUSE MENU (ESC) -----
     if (!gameOver && event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
 
@@ -731,7 +769,7 @@ if (victory) {
     }
     
     VictoryScreen vs(renderer);
-    std::string result = vs.run(facts, scoreboard->getScore());
+    std::string result = vs.run(scoreboard->getScore());
 
     if (result == "restart") {
         resetGame();
