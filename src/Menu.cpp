@@ -28,6 +28,8 @@ Menu::Menu(SDL_Renderer* renderer)
       typingSpeedMs(25)
 {
 
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
     // Initialize SDL_mixer for menu music
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         std::cerr << "SDL_mixer could not initialize! Mix_Error: " << Mix_GetError() << std::endl;
@@ -265,6 +267,12 @@ void Menu::renderMainMenu() {
         SDL_SetRenderDrawColor(renderer, 10, 25, 60, 255);
         SDL_RenderClear(renderer);
     }
+
+    // --- DARKEN OVERLAY ---
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 40);   // adjust 120 for desired effect
+    SDL_Rect overlay = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
+    SDL_RenderFillRect(renderer, &overlay);
 
     // ---- WELCOME TITLE ----
     float t = SDL_GetTicks() / 1000.0f;

@@ -4,6 +4,10 @@
 ChatUI::ChatUI(SDL_Renderer* renderer, TTF_Font* chatFont)
     : renderer(renderer), chatFont(chatFont)
 {
+    briefFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 28); 
+    if (!briefFont) {
+        std::cerr << "Failed to load title font: " << TTF_GetError() << std::endl;
+    }
 }
 
 ChatUI::~ChatUI()
@@ -86,7 +90,12 @@ void ChatUI::startBriefing(const std::string& playerName)
 
     make("Commander",
      "Before you dive in, remember: \n"
-     "Arrow Keys help steer and Space sends a Calm Pulse.",
+     "Use Arrow keys to navigate your sub.",
+     true);
+
+    make("Commander",
+     "You might encounter scared wildlife: \n"
+     "Space sends a Calm Pulse.",
      true);
 
 
@@ -266,8 +275,26 @@ void ChatUI::render()
     SDL_RenderFillRect(renderer, &titleRect);
 
     SDL_Color titleColor = {200, 220, 255, 255};
-    SDL_Rect titleTextRect = { chatRect.x + 20, chatRect.y + 8, 300, 32 };
-    renderText("Mission Briefing", titleColor, titleTextRect, false);
+   
+    // --- Measure text height first ---
+    SDL_Surface* tempSurf = TTF_RenderText_Blended(briefFont, "Mission Briefing", titleColor);
+    int textW = tempSurf ? tempSurf->w : 0;
+    int textH = tempSurf ? tempSurf->h : 0;
+    if (tempSurf) SDL_FreeSurface(tempSurf);
+
+    // --- Center vertically inside title bar ---
+    const int briefHeight = 40;
+    int centeredY = chatRect.y + (briefHeight - textH) / 2;
+
+    // --- Now draw it centered vertically ---
+        SDL_Rect titleTextRect = {
+        chatRect.x + (chatRect.w - textW) / 2,
+        centeredY,
+        textW,
+        textH
+    };
+
+    renderText("Mission Briefing", titleColor, titleTextRect, false, briefFont);
 
     // ----- SONAR SPRITE -----
 
@@ -305,10 +332,10 @@ void ChatUI::render()
     if (nameSurf) SDL_FreeSurface(nameSurf);
 
     // Sender name aligned to left of bubble
-    int namePadding = 12;
+    int namePadding = 2;
     SDL_Rect nameRect {
         bubbleX + namePadding,   // LEFT aligned to bubble
-        bubbleY - nameH - 8,     // above bubble
+        bubbleY - nameH - 2,     // above bubble
         nameW,
         nameH
     };
@@ -341,8 +368,8 @@ void ChatUI::render()
         bool isHovered = (i == hoveredButton);
 
         SDL_Color drawColor = isHovered
-            ? SDL_Color{  140, 200, 255, 255 }   // lighter blue on hover
-            : SDL_Color{ 60, 120, 200, 255 };  // normal color
+            ? SDL_Color{  140, 200, 255, 250 }   // lighter blue on hover
+            : SDL_Color{ 60, 120, 200, 250 };  // normal color
 
         SDL_SetRenderDrawColor(renderer, drawColor.r, drawColor.g, drawColor.b, drawColor.a);
         SDL_RenderFillRect(renderer, &b.rect);
@@ -354,8 +381,8 @@ void ChatUI::render()
     // ----- START BUTTON (Return to Menu) -----
     if (showStartButton)
     {
-    SDL_Color normal = { 60, 120, 200, 255 };
-        SDL_Color hover  = { 140, 200, 255, 255 };
+    SDL_Color normal = { 60, 120, 200, 250 };
+        SDL_Color hover  = { 140, 200, 255, 250 };
 
         SDL_Color draw = startButtonHovered ? hover : normal;
 
@@ -376,21 +403,28 @@ void ChatUI::render()
 
 
 void ChatUI::renderText(const std::string& text, SDL_Color color,
-                        SDL_Rect& rect, bool wrap)
+                        SDL_Rect& rect, bool wrap, TTF_Font* overrideFont)
 {
-    if (text.empty() || !chatFont) return;
+    if (text.empty()) return;
 
-    int wrapWidth = rect.w;
+    // Use override font if provided, else fallback to chatFont
+    TTF_Font* fontToUse = overrideFont ? overrideFont : chatFont;
+    if (!fontToUse) return;
 
-    SDL_Surface* surf = wrap ?
-        TTF_RenderText_Blended_Wrapped(chatFont, text.c_str(), color, wrapWidth) :
-        TTF_RenderText_Blended(chatFont, text.c_str(), color);
+    SDL_Surface* surf = nullptr;
+
+    if (wrap) {
+        int wrapWidth = rect.w;
+        surf = TTF_RenderText_Blended_Wrapped(fontToUse, text.c_str(), color, wrapWidth);
+    } else {
+        surf = TTF_RenderText_Blended(fontToUse, text.c_str(), color);
+    }
 
     if (!surf) return;
 
     SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
-
     SDL_Rect dst = { rect.x, rect.y, surf->w, surf->h };
+
     SDL_FreeSurface(surf);
 
     if (tex) {
@@ -398,6 +432,9 @@ void ChatUI::renderText(const std::string& text, SDL_Color color,
         SDL_DestroyTexture(tex);
     }
 }
+
+
+
 
 void ChatUI::renderBubble(int x, int y, int w, int h, SDL_Color color)
 {
@@ -495,7 +532,7 @@ void ChatUI::loadSonar(const std::string& sonarPath)
         sonarSprite = SDL_CreateTextureFromSurface(renderer, sSurf);
         SDL_FreeSurface(sSurf);
 
-        const int titleHeight = 40;
+        const int briefHeight = 40;
 
         // WIDE SONAR SIZE
         const int sonarWidth  = 400;   // adjust as you like
@@ -508,7 +545,7 @@ void ChatUI::loadSonar(const std::string& sonarPath)
         sonarRect.x = chatRect.x + (chatRect.w - sonarWidth) / 2;
 
         // Place below title bar
-        sonarRect.y = chatRect.y + titleHeight + 20;
+        sonarRect.y = chatRect.y + briefHeight + 20;
     }
 }
 

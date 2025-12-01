@@ -68,17 +68,21 @@ private:
 
     // Colors
     SDL_Color commanderNameColor { 180, 210, 255, 255 };
-    SDL_Color pilotNameColor { 240, 240, 200, 255 };
+    SDL_Color pilotNameColor { 200, 255, 235, 255 };
 
-    SDL_Color commanderBubbleColor { 60, 125, 160, 255 };
-    SDL_Color pilotBubbleColor { 220, 220, 200, 255 };
+    SDL_Color commanderBubbleColor { 60, 125, 160, 230 };
+    SDL_Color pilotBubbleColor { 70, 150, 130, 255 };
+
+    TTF_Font* briefFont = nullptr;
+
 
     // Active response buttons
     std::vector<Button> responseButtons;
 
     // helpers
-    void renderText(const std::string& text, SDL_Color color,
-                    SDL_Rect& rect, bool wrap);
+   void renderText(const std::string& text, SDL_Color color,
+                SDL_Rect& rect, bool wrap = false, TTF_Font* overrideFont = nullptr);
+
 
     void renderBubble(int x, int y, int w, int h, SDL_Color color);
     int calculateBubbleHeight(const std::string& text, int maxWidth);

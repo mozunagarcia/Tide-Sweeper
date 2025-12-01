@@ -218,7 +218,18 @@ void GameManager::run() {
     scoreboard->setScore(0);
 
     // Submarine
-    submarine = new Submarine(submarineTex, 200, 275, 100, 60);
+    int texW, texH;
+    SDL_QueryTexture(submarineTex, nullptr, nullptr, &texW, &texH);
+
+    // Scale tuned for your scene
+    float scale = 0.11f;
+
+    int subW = (int)(texW * scale);
+    int subH = (int)(texH * scale);
+
+    submarine = new Submarine(submarineTex, 200, 275, subW, subH);
+
+
 
     // Level: Start with Level1 (no animals)
     level = new Level1(renderer,
