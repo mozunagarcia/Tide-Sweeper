@@ -22,18 +22,42 @@ Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTex
       blackoutInterval(600), blackoutWarning(120), blackoutDuration(300), blackoutWidth(0),
       isBlackoutFading(false), isBlackoutFullyCovered(false), fullCoverCounter(0)
 {
+    std::vector<int> litterWidths;
+    std::vector<int> litterHeights;
+
+    for (auto tex : litterTextures) {
+        int w = 0, h = 0;
+        SDL_QueryTexture(tex, NULL, NULL, &w, &h);
+
+        // Scale down here if you want universal smaller sizes
+        float scale = 0.15f;  
+        w = int(w * scale);
+        h = int(h * scale);
+
+        litterWidths.push_back(w);
+        litterHeights.push_back(h);
+
+    }
+
     // Create litter from provided textures using the original initial positions/speeds
     if (litterTextures.size() >= 7) {
-        litterItems.emplace_back(Litter(litterTextures[0], 200, 300, 1.5f));
-        litterItems.emplace_back(Litter(litterTextures[1], 500, 400, 2.0f));
-        litterItems.emplace_back(Litter(litterTextures[2], 650, 250, 1.8f));
-        litterItems.emplace_back(Litter(litterTextures[3], 350, 200, 1.3f));
-        litterItems.emplace_back(Litter(litterTextures[4], 700, 500, 2.2f));
-        litterItems.emplace_back(Litter(litterTextures[5], 100, 450, 1.6f));
-        litterItems.emplace_back(Litter(litterTextures[6], 400, 350, 1.9f));
+        litterItems.emplace_back(Litter(litterTextures[0], 200, 300, 1.5f, litterWidths[0], litterHeights[0]));
+        litterItems.emplace_back(Litter(litterTextures[1], 500, 400, 2.0f, litterWidths[1], litterHeights[1]));
+        litterItems.emplace_back(Litter(litterTextures[2], 650, 250, 1.8f, litterWidths[2], litterHeights[2]));
+        litterItems.emplace_back(Litter(litterTextures[3], 350, 200, 1.3f, litterWidths[3], litterHeights[3]));
+        litterItems.emplace_back(Litter(litterTextures[4], 700, 500, 2.2f, litterWidths[4], litterHeights[4]));
+        litterItems.emplace_back(Litter(litterTextures[5], 100, 450, 1.6f, litterWidths[5], litterHeights[5]));
+        litterItems.emplace_back(Litter(litterTextures[6], 400, 350, 1.9f, litterWidths[6], litterHeights[6]));
     } else {
-        for (auto tex : litterTextures) {
-            litterItems.emplace_back(Litter(tex, 850, rand() % 500 + 50, 1.5f));
+        for (int i = 0; i < litterTextures.size(); i++) {
+            litterItems.emplace_back(
+                Litter(litterTextures[i],
+                    850,
+                    rand() % 500 + 50,
+                    1.5f,
+                    litterWidths[i],
+                    litterHeights[i])
+            );
         }
     }
 }
@@ -523,6 +547,14 @@ Level4::Level4(SDL_Renderer* renderer,
     maxActiveEnemies = 4;  // 4 enemies on screen
     spawnInterval = 120;   // spawns every 2 seconds
 
+    float scale = 0.15f;        // choose your litter scale
+    for (auto tex : storedLitterTextures) {
+        int w = 0, h = 0;
+        SDL_QueryTexture(tex, NULL, NULL, &w, &h);
+        scaledWidths.push_back(int(w * scale));
+        scaledHeights.push_back(int(h * scale));
+    }
+    
     // Clear all litter from base class and Level 3
     litterItems.clear();
  }
@@ -544,7 +576,13 @@ void Level4::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
             int randomY = 50 + (rand() % 500);  // Keep within visible area
             float randomSpeed = 4.0f;// 1.5f + (rand() % 15) / 10.0f;  // Speed between 1.5 and 3.0
             int randomX = 850 + (rand() % 100);  // Slight variation in spawn position
-            litterItems.emplace_back(Litter(storedLitterTextures[texIndex], randomX, randomY, randomSpeed));
+            
+            int w = scaledWidths[texIndex];
+            int h = scaledHeights[texIndex];
+
+            litterItems.emplace_back(
+                Litter(storedLitterTextures[texIndex], randomX, randomY, randomSpeed, w, h)
+            );
         }
     }
     

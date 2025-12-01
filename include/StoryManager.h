@@ -1,55 +1,58 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <SDL.h>
+#include "Level.h"
 #include "Messages.h"
+#include "Level.h"
 
-// CUTSCENE DATA (only Level 1 intro + Level 4 outro use it)
-struct Cutscene {
-    std::vector<std::string> lines;
-    bool playsBeforeLevel = false;
-    bool playsAfterLevel  = false;
-};
-
-// PER-LEVEL STORY DATA
-struct LevelData {
-    std::string zoneName;                // Top-left HUD banner text
-
-    std::vector<std::string> radioIntro; // Start-of-level radio messages
-    std::vector<std::string> milestones; // Score-based radio messages
-    std::string endMessage;              // End-of-level radio message
-
-    Cutscene intro;                      // Level 1 only
-    Cutscene outro;                      // Level 4 only
-
-    int nextScore = 30;                  // Score threshold for next milestone
-    int milestoneIndex = 0;              // Which milestone to show next
-};
-
-// STORY MANAGER
-class StoryManager
+class Level;
+class Level4;
+struct LevelInfo
 {
+    std::string zoneName;
+
+    std::vector<std::string> radioIntro;
+    std::vector<std::string> milestones;
+
+    int milestoneIndex = 0;
+    int nextScore = 30;
+
+    std::string endMessage;
+    int endScore = 0;
+
+    std::vector<int> timeTriggers;  // seconds remaining when messages fire
+    int timeIndex = 0;              // next time-trigger to play
+};
+
+class StoryManager {
 public:
     StoryManager(Messages* msg);
 
     void reset();
     void onLevelChange(int newLevel);
     void onLevelEnd(int oldLevel);
-    void update(int score, int currentLevel);
 
+    void onFirstAnimal();   // LEVEL 2 special
+    void onOilDetected();   // LEVEL 3 special
+
+    void setLevelPointer(Level* lvl) { currentLevelPtr = lvl; }
+
+    void update(int score, int level, int timeRemaining);
     void renderLevelChange(SDL_Renderer* renderer);
 
-private:
-    void playCutscene(const Cutscene& cs);
+    bool animalMessagePlayed = false;
+    bool oilMessagePlayed = false;
+    bool endMessagePlayed = false;
 
-    Messages* messages;                  // Radio + cutscene system
-    std::vector<LevelData> levels;       // Level 1–4 story data
+private:
+    Messages* messages;
+    std::vector<LevelInfo> levels;
 
     int currentLevel = 1;
+    Level* currentLevelPtr = nullptr; // <-- pointer stored here
 
-    // HUD zone banner data
-    bool lvlChangeActive = false;
-    std::string lvlChangeText = "";
+    std::string lvlChangeText;
     Uint32 lvlChangeStart = 0;
-    Uint32 lvlChangeDuration = 2600;     // HUD stays visible 2.6 seconds
+    bool lvlChangeActive = false;
+    int lvlChangeDuration = 3500;
 };

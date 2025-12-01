@@ -4,6 +4,10 @@
 Enemies::Enemies(SDL_Texture* tex, float startX, float startY, float moveSpeed, int w, int h, int type)
     : texture(tex), x(startX), y(startY), speed(moveSpeed), active(true), respawnTimer(0), width(w), height(h), enemyType(type)
 {
+    if (type == 4) {
+        width = static_cast<int>(w * 1.5f);
+        height = static_cast<int>(h * 1.5f);
+    }
 }
 
 void Enemies::update(float subX, float subY) {
@@ -140,4 +144,4 @@ void Enemies::startHitBlink() {
 void Enemies::startFalling() {
     falling = true;
     fallSpeed = 0;
-}
+} 

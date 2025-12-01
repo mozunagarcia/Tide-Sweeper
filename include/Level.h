@@ -30,6 +30,8 @@ public:
     std::vector<Enemies>& getEnemyItems() { return enemyItems; }
     void setEnemyItems(const std::vector<Enemies>& enemies) { enemyItems = enemies; }
     bool isInBlackout() const { return isBlackout; }
+    bool isOilWarning() const { return isWarning; }
+
 
 protected:
     SDL_Renderer* renderer;
@@ -124,6 +126,9 @@ public:
     int getStormTimer() const { return stormTimer; }
     float getScrollOffset() const { return scrollOffset; }
     int getCameraShake() const { return cameraShakeFrames; }
+    std::vector<int> scaledWidths;
+    std::vector<int> scaledHeights;
+
 
 private:
     int stormTimer;           // Countdown timer in frames (60 fps)

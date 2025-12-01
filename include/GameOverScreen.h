@@ -8,7 +8,7 @@
 
 class GameOverScreen {
 public:
-    GameOverScreen(SDL_Renderer* renderer);
+    GameOverScreen(SDL_Renderer* renderer, SDL_Texture* bg = nullptr);
     ~GameOverScreen();
 
     // returns: "restart", "menu", "exit", "resume"
@@ -19,6 +19,7 @@ private:
     SDL_Renderer* renderer;
     TTF_Font* fontLarge;
     TTF_Font* fontSmall;
+    SDL_Texture* background = nullptr;
 
     struct Button {
         SDL_Rect rect;

@@ -27,50 +27,83 @@ static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
 }
 
 GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
-    : window(window_), renderer(renderer_), level(nullptr), submarine(nullptr), scoreboard(nullptr), messages(nullptr), menu(nullptr), running(true), startGame(false), backgroundMusic(nullptr), showingLevel4Intro(false), level4IntroTimer(0), level4IntroBlinkCounter(0)
+    : window(window_),
+      renderer(renderer_),
+      level(nullptr),
+      submarine(nullptr),
+      scoreboard(nullptr),
+      messages(nullptr),
+      menu(nullptr),
+      running(true),
+      startGame(false),
+      backgroundMusic(nullptr),
+      levelCompleteSound(nullptr),   // IMPORTANT FIX
+      animalCollisionSound(nullptr), // IMPORTANT FIX
+      showingLevel4Intro(false),
+      level4IntroTimer(0),
+      level4IntroBlinkCounter(0)
 {
     // Create menu 
     menu = new Menu(renderer);
-    
-// ----- EDIT START -----
+
+    // ----- EDIT START -----
     // Initialize upgraded Messages system
     msgManager = new Messages(renderer);
     storyManager = new StoryManager(msgManager);
-
+    storyManager->reset();
 
     facts = {
-    "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
-    "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
-    "Ghost nets make up a major part of ocean plastic and trap animals for years.",
-    "Illegal dumping harms marine life and destroys fragile ecosystems.",
-    "Over 8 million tons of plastic enter the ocean every year.",
-    "Microplastics have been found in Arctic snow and deep-sea trenches.",
-    "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
-    "Coral reefs can get sick from chemicals in sunscreen or plastic waste.",
-    "Around 700 marine species are harmed by plastic pollution.",
-    "The Great Pacific Garbage Patch is larger than Texas.",
-    "Some plastics absorb toxic chemicals and become more dangerous to animals.",
-    "Cigarette filters are the most common litter found on beaches.",
-    "One liter of oil can pollute up to one million liters of seawater.",
-    "The ocean floor contains millions of tons of trash, including lost cargo.",
-    "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
-};
-
-
-// ----- EDIT END -----
-
-
-    // We'll initialize game objects when entering the gameplay loop inside run()
+        "Lost fishing line can trap animals and stay in the ocean for up to 600 years.",
+        "Sea turtles often mistake plastic bags for jellyfish and can choke or starve.",
+        "Ghost nets make up a major part of ocean plastic and trap animals for years.",
+        "Illegal dumping harms marine life and destroys fragile ecosystems.",
+        "Over 8 million tons of plastic enter the ocean every year.",
+        "Microplastics have been found in Arctic snow and deep-sea trenches.",
+        "Plastic never fully disappears; it breaks into tiny pieces that last for centuries.",
+        "Coral reefs can get sick from chemicals in sunscreen or plastic waste.",
+        "Around 700 marine species are harmed by plastic pollution.",
+        "The Great Pacific Garbage Patch is larger than Texas.",
+        "Some plastics absorb toxic chemicals and become more dangerous to animals.",
+        "Cigarette filters are the most common litter found on beaches.",
+        "One liter of oil can pollute up to one million liters of seawater.",
+        "The ocean floor contains millions of tons of trash, including lost cargo.",
+        "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
+    };
+    // ----- EDIT END -----
 }
 
 GameManager::~GameManager() {
-    delete level;
-    delete submarine;
-    delete scoreboard;
-    delete msgManager;
-    delete menu;
-    
-    // Stop and free music
+
+    if (level) {
+        delete level;
+        level = nullptr;
+    }
+
+    if (submarine) {
+        delete submarine;
+        submarine = nullptr;
+    }
+
+    if (scoreboard) {
+        delete scoreboard;
+        scoreboard = nullptr;
+    }
+
+    if (storyManager) {
+        delete storyManager;
+        storyManager = nullptr;
+    }
+
+    if (msgManager) {
+        delete msgManager;
+        msgManager = nullptr;
+    }
+
+    if (menu) {
+        delete menu;
+        menu = nullptr;
+    }
+
     if (backgroundMusic) {
         Mix_HaltMusic();
         Mix_FreeMusic(backgroundMusic);
@@ -80,10 +113,12 @@ GameManager::~GameManager() {
         Mix_FreeChunk(timerSound);
         timerSound = nullptr;
     }
+
     if (levelCompleteSound) {
         Mix_FreeChunk(levelCompleteSound);
         levelCompleteSound = nullptr;
     }
+
     if (animalCollisionSound) {
         Mix_FreeChunk(animalCollisionSound);
         animalCollisionSound = nullptr;
@@ -94,6 +129,8 @@ GameManager::~GameManager() {
         victorySound = nullptr;
     }
 }
+
+
 
 void GameManager::run() {
     // --- MENU LOOP ---
@@ -163,12 +200,17 @@ void GameManager::run() {
 
 
     // --- Load shared textures --- (paths kept identical to original)
-    SDL_Texture* ocean = loadTexture(renderer, "Assets/ocean.png");
+    SDL_Texture* ocean = loadTexture(renderer, "Assets/backgrounds/Level1.png");
     SDL_Texture* submarineTex = loadTexture(renderer, "Assets/submarine.png");
     if (!ocean || !submarineTex) {
-        std::cerr << "Missing textures! Place ocean.png and submarine.png in /assets\n";
+        std::cerr << "Missing textures! Place Level1.png and submarine.png in /assets\n";
         return;
     }
+
+    // Pause + Game Over Backgrounds
+    SDL_Texture* pauseBG = loadTexture(renderer, "Assets/backgrounds/gameover_bg.png");
+    SDL_Texture* gameOverBG = loadTexture(renderer, "Assets/backgrounds/gameover_bg.png");
+
     //Radio textures
     SDL_Texture* radioTex = loadTexture(renderer, "Assets/Radio.png");
 
@@ -201,13 +243,26 @@ void GameManager::run() {
     scoreboard->setScore(0);
 
     // Submarine
-    submarine = new Submarine(submarineTex, 200, 275, 100, 60);
+    int texW, texH;
+    SDL_QueryTexture(submarineTex, nullptr, nullptr, &texW, &texH);
+
+    // Scale tuned for your scene
+    float scale = 0.11f;
+
+    int subW = (int)(texW * scale);
+    int subH = (int)(texH * scale);
+
+    submarine = new Submarine(submarineTex, 200, 275, subW, subH);
+
+
 
     // Level: Start with Level1 (no animals)
     level = new Level1(renderer,
                        { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                        enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
     
+    storyManager->setLevelPointer(level);
+
     // Set oil texture for level 3 blackout effect
     level->setOilTexture(oilTex);
     level->setAnimalCollisionSound(animalCollisionSound);
@@ -228,7 +283,10 @@ void GameManager::run() {
     // Reset function
     auto resetGame = [&]() {
         //edit
-        storyManager->reset(); 
+        storyManager->onLevelChange(1);
+        msgManager->reset();
+        msgManager->update();
+
         //edit
         lives = 3;
         gameOver = false;
@@ -244,21 +302,26 @@ void GameManager::run() {
         level = new Level1(renderer,
                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-        level->setOilTexture(oilTex);
-        level->setAnimalCollisionSound(animalCollisionSound);
+       
+       storyManager->setLevelPointer(level);
+       level->setOilTexture(oilTex);
+       level->setAnimalCollisionSound(animalCollisionSound);
         
         // Reset ocean background to level 1
         SDL_DestroyTexture(ocean);
-        ocean = loadTexture(renderer, "Assets/ocean.png");
+        ocean = loadTexture(renderer, "Assets/backgrounds/Level1.png");
         
         // Recreate Level 1 to properly reset all state
         delete level;
         level = new Level1(renderer,
                            { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                            enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+        
+        storyManager->setLevelPointer(level);
+
         level->setOilTexture(oilTex);
         level->setAnimalCollisionSound(animalCollisionSound);
-        
+
         // Reset music to start from the beginning
         if (backgroundMusic) {
             Mix_RewindMusic();
@@ -283,7 +346,7 @@ void GameManager::run() {
     // ----- PAUSE MENU (ESC) -----
     if (!gameOver && event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
 
-        GameOverScreen pause(renderer);
+        GameOverScreen pause(renderer, pauseBG);
 
         int factIndex = currentLevel - 1;
         if (factIndex < 0) factIndex = 0;
@@ -371,7 +434,43 @@ void GameManager::run() {
             }
 
             // --- edit start ---
-            storyManager->update(scoreboard->getScore(), scoreboard->getLevel());
+            int timeRemaining = 0;
+
+            // If level 4, get the timer
+            if (currentLevel == 4)
+            {
+                Level4* lvl4 = dynamic_cast<Level4*>(level);
+                if (lvl4) {
+                    timeRemaining = lvl4->getStormTimer() / 60; // convert frames → seconds
+                }
+            }
+
+            storyManager->update(scoreboard->getScore(), scoreboard->getLevel(), timeRemaining);
+
+            // ---- FIRST ANIMAL DETECTION (Level 2) ----
+            if (currentLevel == 2 && !storyManager->animalMessagePlayed)
+            {
+                // If enemies exist, an animal has spawned
+                if (!level->getEnemyItems().empty())
+                {
+                    storyManager->onFirstAnimal();
+                }
+            }
+
+            // ---- FIRST OIL SLICK DETECTION (Level 3) ----
+            if (currentLevel == 3 && !storyManager->oilMessagePlayed)
+            {
+                 Level3* level3 = dynamic_cast<Level3*>(level);
+            if (level3)
+            {
+                // Oil slick begins the moment the warning phase activates
+                if (level3->isOilWarning())
+                {
+                    storyManager->onOilDetected();
+                }
+            }
+            }
+
             // --- edit end ---
 
             
@@ -406,7 +505,9 @@ void GameManager::run() {
                         level = new Level1(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-                        level->setLitterItems(savedLitter);
+                       storyManager->setLevelPointer(level);
+
+                       level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setAnimalCollisionSound(animalCollisionSound);
                     }
@@ -414,26 +515,30 @@ void GameManager::run() {
                         level = new Level2(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                        storyManager->setLevelPointer(level);
+
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setAnimalCollisionSound(animalCollisionSound);
                         
                         SDL_DestroyTexture(ocean);
                         //SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
-                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/2ocean.png");
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/Level2.png");
                         if (newOcean) {
                             ocean = newOcean;
                         } else {
                             //SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
-                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/2ocean.png");
+                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/Level2.png");
                             if (altOcean) ocean = altOcean;
-                            else std::cerr << "Failed to load ocean_background: Assets/2ocean.png" << std::endl;
+                            else std::cerr << "Failed to load Level 2background: Assets/Level2.png" << std::endl;
                         }
                     }
                     else if (currentLevel == 3) {
                         level = new Level3(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
+                       storyManager->setLevelPointer(level);
+
                         level->setLitterItems(savedLitter);
                         level->setEnemyItems(savedEnemies);
                         level->setOilTexture(oilTex);
@@ -441,24 +546,24 @@ void GameManager::run() {
                         
                         SDL_DestroyTexture(ocean);
                         // SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
-                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/3ocean.png");
+                        SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/Level3.png");
                          if (newOcean) {
                             ocean = newOcean;
                         } else {
                             // SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
-                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/3ocean.png");
+                            SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/Level3.png");
                             if (altOcean) ocean = altOcean;
-                            else std::cerr << "Failed to load ocean3.png: Assets/3ocean.png" << std::endl;
+                            else std::cerr << "Failed to load ocean3.png: Assets/background/Level3.png" << std::endl;
                         }
                     }
                     else if (currentLevel >= 4) {
                         // Load final level background FIRST
                         SDL_DestroyTexture(ocean);
-                        SDL_Texture* trashCluster = loadTexture(renderer, "Assets/backgrounds/4ocean.png");
+                        SDL_Texture* trashCluster = loadTexture(renderer, "Assets/backgrounds/Level4.png");
                         if (trashCluster) {
                             ocean = trashCluster;
                         } else {
-                            std::cerr << "Failed to load 4ocean.png" << std::endl;
+                            std::cerr << "Failed to load Level4.png" << std::endl;
                         }
                         
                         // Start Level 4 intro sequence
@@ -470,6 +575,8 @@ void GameManager::run() {
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
                         //level->setLitterItems(savedLitter);  // Keep Level 3 litter for smooth transition
+                        storyManager->setLevelPointer(level);
+
                         level->setOilTexture(oilTex);
                         level->setAnimalCollisionSound(animalCollisionSound);
                     }
@@ -641,7 +748,7 @@ if (victory) {
     }
 } else if (gameOver) {
 //if (gameOver) {
-    GameOverScreen go(renderer);
+    GameOverScreen go(renderer, gameOverBG);
 
     std::string result = go.run("Game Over!", facts);
 

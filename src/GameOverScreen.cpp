@@ -1,8 +1,8 @@
 #include "GameOverScreen.h"
 #include <iostream>
 
-GameOverScreen::GameOverScreen(SDL_Renderer* renderer)
-    : renderer(renderer), hoveredIndex(-1)
+GameOverScreen::GameOverScreen(SDL_Renderer* renderer, SDL_Texture* bg)
+    : renderer(renderer), background(bg), hoveredIndex(-1)
 {
     fontLarge = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 48);
     fontSmall = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 28);
@@ -39,10 +39,25 @@ bool GameOverScreen::isInside(const SDL_Rect& r, int x, int y) {
                             bool showResume,
                             float countdownRatio)
 {
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
-    SDL_Rect bg = {0, 0, 800, 600};
-    SDL_RenderFillRect(renderer, &bg);
+    //--edit--
+    // ---- BACKGROUND ----
+    if (background) {
+        SDL_Rect full = {0, 0, 800, 600};
+        SDL_RenderCopy(renderer, background, NULL, &full);
+
+        // add optional dark overlay for readability
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 140);  
+        SDL_RenderFillRect(renderer, &full);
+    } 
+    else {
+        // fallback if no background provided
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
+        SDL_Rect bg = {0, 0, 800, 600};
+        SDL_RenderFillRect(renderer, &bg);
+    }
+//--edit--
 
     SDL_Color white = {255,255,255};
 
