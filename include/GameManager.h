@@ -9,7 +9,7 @@
 #include "Messages.h"
 #include "Menu.hpp"
 #include "StoryManager.h"
-// #include "VictoryScreen.h"
+#include "VictoryScreen.h"
 #include "GameOverScreen.h"
 
 
@@ -38,7 +38,7 @@ private:
     Mix_Chunk* timerSound;
     Mix_Chunk* levelCompleteSound;
     Mix_Chunk* animalCollisionSound;
-    // Mix_Chunk* victorySound;
+    Mix_Chunk* victorySound;
     
     // Level 4 intro sequence
     bool showingLevel4Intro;

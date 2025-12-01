@@ -88,10 +88,11 @@ GameManager::~GameManager() {
         Mix_FreeChunk(animalCollisionSound);
         animalCollisionSound = nullptr;
     }
-    // if (victorySound) {
-    //     Mix_FreeChunk(victorySound);
-    //     victorySound = nullptr;
-    // }
+    
+    if (victorySound) {
+        Mix_FreeChunk(victorySound);
+        victorySound = nullptr;
+    }
 }
 
 void GameManager::run() {
@@ -128,13 +129,13 @@ void GameManager::run() {
         Mix_VolumeChunk(animalCollisionSound, MIX_MAX_VOLUME / 4);  // Set volume
     }
     
-    // // Load victory sound effect
-    // victorySound = Mix_LoadWAV("Assets/sound_effects/victory.wav");
-    // if (!victorySound) {
-    //     std::cerr << "Failed to load victory sound! Mix_Error: " << Mix_GetError() << std::endl;
-    // } else {
-    //     Mix_VolumeChunk(victorySound, MIX_MAX_VOLUME);  // Set volume
-    // }
+    // Load victory sound effect
+    victorySound = Mix_LoadWAV("Assets/sound_effects/victory.wav");
+    if (!victorySound) {
+        std::cerr << "Failed to load victory sound! Mix_Error: " << Mix_GetError() << std::endl;
+    } else {
+        Mix_VolumeChunk(victorySound, MIX_MAX_VOLUME);  // Set volume
+    }
     
     // Load game background music
     backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.mp3");
@@ -606,40 +607,40 @@ if (currentLevel == 4 && lives > 0) {
     }
 }
 
-// // Check for victory condition (Level 4 timer completed with lives > 0)
-// bool victory = false;
-// if (currentLevel == 4 && lives > 0) {
-//     Level4* level4 = dynamic_cast<Level4*>(level);
-//     if (level4 && level4->getStormTimer() <= 0) {
-//         victory = true;
-//     }
-// }
-// 
-// if (victory) {
-//     // Stop background music and play victory sound
-//     Mix_HaltMusic();
-//     if (victorySound) {
-//         Mix_PlayChannel(-1, victorySound, 0);
-//     }
-//     
-//     VictoryScreen vs(renderer);
-//     std::string result = vs.run(facts, scoreboard->getScore());
-// 
-//     if (result == "restart") {
-//         resetGame();
-//         continue;
-//     }
-//     if (result == "menu") {
-//         resetGame();
-//         startGame = false;
-//         return;
-//     }
-//     if (result == "exit") {
-//         running = false;
-//         break;
-//     }
-// } else if (gameOver) {
-if (gameOver) {
+// Check for victory condition (Level 4 timer completed with lives > 0)
+bool victory = false;
+if (currentLevel == 4 && lives > 0) {
+    Level4* level4 = dynamic_cast<Level4*>(level);
+    if (level4 && level4->getStormTimer() <= 0) {
+        victory = true;
+    }
+}
+
+if (victory) {
+    // Stop background music and play victory sound
+    Mix_HaltMusic();
+    if (victorySound) {
+        Mix_PlayChannel(-1, victorySound, 0);
+    }
+    
+    VictoryScreen vs(renderer);
+    std::string result = vs.run(facts, scoreboard->getScore());
+
+    if (result == "restart") {
+        resetGame();
+        continue;
+    }
+    if (result == "menu") {
+        resetGame();
+        startGame = false;
+        return;
+    }
+    if (result == "exit") {
+        running = false;
+        break;
+    }
+} else if (gameOver) {
+//if (gameOver) {
     GameOverScreen go(renderer);
 
     std::string result = go.run("Game Over!", facts);
