@@ -155,7 +155,7 @@ void Level::renderBlackoutEffects(Submarine& submarine) {
 
 void Level::calmEnemies(float subX, float subY, float radius) {
     for (auto& enemy : enemyItems) {
-        if (!enemy.active) continue;
+        if (!enemy.active || enemy.calmed) continue;
         
         // Calculate distance from submarine to enemy center
         float enemyCenterX = enemy.x + enemy.width / 2.0f;
@@ -164,9 +164,20 @@ void Level::calmEnemies(float subX, float subY, float radius) {
         float dy = enemyCenterY - subY;
         float distance = std::sqrt(dx * dx + dy * dy);
         
-        // If enemy is within calm radius, deactivate it
-        if (distance <= radius) {
-            enemy.active = false;
+        // If enemy is within calm radius, deflect it slightly away
+        if (distance <= radius && distance > 0) {
+            // Normalize the direction vector
+            float dirX = dx / distance;
+            float dirY = dy / distance;
+            
+            // Set up gradual deflection
+            enemy.deflecting = true;
+            enemy.deflectDirX = dirX;
+            enemy.deflectDirY = dirY;
+            enemy.deflectTimer = 30;  // 30 frames for smooth deflection
+            
+            // Set enemy to calmed state (will move left after deflection)
+            enemy.calmed = true;
         }
     }
 }
@@ -508,9 +519,9 @@ Level4::Level4(SDL_Renderer* renderer,
       storedLitterTextures(litterTextures)
       //scrollSpeed(0.65f)  // Scroll feed for level 4
 {
-    // Fewer but faster enemies for final level
-    maxActiveEnemies = 2;  // Fewer enemies on screen
-    spawnInterval = 180;   // Spawn less frequently (every 3 seconds)
+    // More enemies for increased challenge in final level
+    maxActiveEnemies = 4;  // 4 enemies on screen
+    spawnInterval = 120;   // spawns every 2 seconds
 
     // Clear all litter from base class and Level 3
     litterItems.clear();
@@ -520,9 +531,6 @@ void Level4::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     // Decrease timer
     if (stormTimer > 0) {
         stormTimer--;
-    } else {
-        // Timer ran out - game over
-        gameOver = true;
     }
     
     // Spawn new litter from the right side continuously

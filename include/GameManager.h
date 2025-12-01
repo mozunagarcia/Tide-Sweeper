@@ -9,6 +9,8 @@
 #include "Messages.h"
 #include "Menu.hpp"
 #include "StoryManager.h"
+// #include "VictoryScreen.h"
+#include "GameOverScreen.h"
 
 
 class GameManager {
@@ -33,13 +35,16 @@ private:
     bool running;
     bool startGame;
     Mix_Music* backgroundMusic;
+    Mix_Chunk* timerSound;
     Mix_Chunk* levelCompleteSound;
     Mix_Chunk* animalCollisionSound;
+    // Mix_Chunk* victorySound;
     
     // Level 4 intro sequence
     bool showingLevel4Intro;
     int level4IntroTimer;
     int level4IntroBlinkCounter;
+    bool timerMusicPlayed;  // Track if 10s timer music has been played
 
     std::vector<std::string> facts;   // Fact strings used in pause + game over
 };

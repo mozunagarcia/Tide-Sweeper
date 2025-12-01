@@ -26,6 +26,46 @@ void Enemies::update(float subX, float subY) {
         return;  // Don't do normal movement when falling
     }
     
+    // If calmed, move in deflection direction and ignore player
+    if (calmed) {
+        // If still deflecting, move in deflection direction
+        if (deflecting && deflectTimer > 0) {
+            x += deflectDirX * 4.0f;  // Increased deflection movement speed
+            y += deflectDirY * 4.0f;
+            deflectTimer--;
+            
+            if (deflectTimer == 0) {
+                deflecting = false;  // Deflection complete
+            }
+            return;
+        }
+        
+        // After deflection, move based on enemy type
+        if (enemyType == 2) {
+            // Octopus moves upward when calmed
+            y -= speed;
+            
+            // Deactivate when off screen (top)
+            if (y < -height) {
+                active = false;
+            }
+        } else {
+            // Other enemies move left
+            x -= speed;
+            
+            // Update facing direction for sharks moving left
+            if (enemyType == 4) {
+                facingRight = false;
+            }
+            
+            // Deactivate when off screen (left)
+            if (x < -width) {
+                active = false;
+            }
+        }
+        return;
+    }
+    
     // Calculate distance to submarine
     float dx = subX - x;
     float dy = subY - y;
@@ -36,6 +76,14 @@ void Enemies::update(float subX, float subY) {
         // Normalize direction and move toward submarine
         float dirX = dx / distance;
         float dirY = dy / distance;
+        
+        // Update facing direction based on movement
+        if (dirX > 0) {
+            facingRight = true;  // Moving right
+        } else if (dirX < 0) {
+            facingRight = false; // Moving left
+        }
+        
         x += dirX * speed;
         y += dirY * speed;
     } else if (enemyType == 2) {
@@ -44,6 +92,11 @@ void Enemies::update(float subX, float subY) {
     } else {
         // Normal behavior: move left
         x -= speed;
+        
+        // Update facing direction for sharks moving left
+        if (enemyType == 4) {
+            facingRight = false;
+        }
     }
 }
 
@@ -58,7 +111,14 @@ void Enemies::render(SDL_Renderer* renderer) {
     }
     
     SDL_Rect dest = { static_cast<int>(x), static_cast<int>(y), width, height };
-    SDL_RenderCopy(renderer, texture, nullptr, &dest);
+    
+    // Flip shark sprite based on facing direction
+    if (enemyType == 4) {
+        SDL_RendererFlip flip = facingRight ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+        SDL_RenderCopyEx(renderer, texture, nullptr, &dest, 0, nullptr, flip);
+    } else {
+        SDL_RenderCopy(renderer, texture, nullptr, &dest);
+    }
     
     // Reset color mod
     SDL_SetTextureColorMod(texture, 255, 255, 255);
