@@ -7,7 +7,7 @@
 Messages::Messages(SDL_Renderer* renderer)
     : renderer(renderer)
 {
-    font = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 22);
+    font = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 20);
     if (!font) {
         std::cerr << "Failed to load message font OpenSans.ttf\n";
     }

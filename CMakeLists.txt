@@ -104,6 +104,7 @@ add_executable(TideSweeper
     src/Messages.cpp
     src/GameOverScreen.cpp
     src/StoryManager.cpp
+    src/ChatUI.cpp
 )
 
 target_link_libraries(TideSweeper ${EXTRA_LIBS})

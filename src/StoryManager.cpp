@@ -7,9 +7,8 @@ StoryManager::StoryManager(Messages* msg)
 {
     levels.resize(5);
 
-    // ----------------------
+
     // LEVEL 1 (3 messages)
-    // ----------------------
     levels[1].zoneName = "Entering Zone: Coastal Trash Vortex";
     levels[1].radioIntro = { "This area is safe, perfect for training." };
     levels[1].milestones = {
@@ -17,10 +16,9 @@ StoryManager::StoryManager(Messages* msg)
     };
     levels[1].endMessage = "Wildlife signals detected.";
 
-    // ----------------------
     // LEVEL 2 (5 messages)
     // Intro + first animal + milestone + end
-    // ----------------------
+
     levels[2].zoneName = "Entering Zone: Wildlife Disturbance";
     levels[2].radioIntro = {
         "Animals are fleeing deeper waters."
@@ -30,10 +28,9 @@ StoryManager::StoryManager(Messages* msg)
     };
     levels[2].endMessage = "Disturbances intensifying... cause still unknown.";
 
-    // ----------------------
     // LEVEL 3 (5 messages)
     // Intro + first oil + milestone + end
-    // ----------------------
+
     levels[3].zoneName = "Entering Zone: Oil Spill Corridor";
     levels[3].radioIntro = {
         "Visibility reduced, oil detected in surrounding waters."
@@ -43,30 +40,25 @@ StoryManager::StoryManager(Messages* msg)
     };
     levels[3].endMessage = "Oil spread worsening, conditions unstable.";
 
-    // ----------------------
-    // LEVEL 4 (3 messages)
-    // Intro + milestone + end
-    // ----------------------
-    // ----------------------
-// LEVEL 4 (timer-driven)
-// ----------------------
-levels[4].zoneName = "Entering Zone: Illegal Dumping Grounds";
-levels[4].radioIntro = {
-    "Source of contamination ahead, stay focused."
-};
+    // LEVEL 4 (timer-driven)
 
-// Timer milestones trigger at 20s, 10s, 5s left
-levels[4].timeTriggers = { 25, 20, 15, 10, 5 };
+    levels[4].zoneName = "Entering Zone: Illegal Dumping Grounds";
+    levels[4].radioIntro = {
+        "Source of contamination ahead, stay focused."
+    };
 
-levels[4].milestones = {
-    "Storm intensifying, sweep fast!",
-    "Collect, collect, collect!",
-    "Halfway there, debris flooding in!",
-    "Getting close, keep collecting!",
-    "Final surge, grab everything you can!"
-};
+    // Timer milestones trigger 
+    levels[4].timeTriggers = { 25, 20, 15, 10, 5 };
 
-levels[4].endMessage = "Cleanup complete. Returning to safer waters.";
+    levels[4].milestones = {
+        "Storm intensifying, sweep fast!",
+        "Collect, collect, collect!",
+        "Halfway there, debris flooding in!",
+        "Getting close, keep collecting!",
+        "Final surge, grab everything you can!"
+    };
+
+    levels[4].endMessage = "Cleanup complete. Returning to safer waters.";
 
 }
 
@@ -217,30 +209,30 @@ void StoryManager::renderLevelChange(SDL_Renderer* renderer)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
     SDL_RenderFillRect(renderer, &bg);
 
-//--edit--
-SDL_Rect txt = { bg.x + 20, bg.y + 10, w, h };
+    //--edit--
+    SDL_Rect txt = { bg.x + 20, bg.y + 10, w, h };
 
-// TIMING
-Uint32 elapsed  = now - lvlChangeStart;
+    // TIMING
+    Uint32 elapsed  = now - lvlChangeStart;
 
-// ---- 1. FULLY VISIBLE FOR FIRST 3 SECONDS ----
-if (elapsed < 3000)  
-{
-    SDL_SetTextureAlphaMod(tex, 255);   // fully visible
-    SDL_RenderCopy(renderer, tex, NULL, &txt);
-}
-else
-{
-    // ---- 2. FINAL 0.5 SECOND FLICKER ----
-    // Flickers every 60ms
-    bool flickerOn = ((now / 60) % 2) == 0;
-
-    SDL_SetTextureAlphaMod(tex, flickerOn ? 255 : 0);
-
-    if (flickerOn)
+    // ---- 1. FULLY VISIBLE FOR FIRST 3 SECONDS ----
+    if (elapsed < 3000)  
+    {
+        SDL_SetTextureAlphaMod(tex, 255);   // fully visible
         SDL_RenderCopy(renderer, tex, NULL, &txt);
-}
-//--edit--
+    }
+    else
+    {
+        // ---- 2. FINAL 0.5 SECOND FLICKER ----
+        // Flickers every 60ms
+        bool flickerOn = ((now / 60) % 2) == 0;
+
+        SDL_SetTextureAlphaMod(tex, flickerOn ? 255 : 0);
+
+        if (flickerOn)
+            SDL_RenderCopy(renderer, tex, NULL, &txt);
+    }
+    //--edit--
 
     SDL_FreeSurface(surf);
     SDL_DestroyTexture(tex);

@@ -181,6 +181,11 @@ void GameManager::run() {
         std::cerr << "Missing textures! Place Level1.png and submarine.png in /assets\n";
         return;
     }
+
+    // Pause + Game Over Backgrounds
+    SDL_Texture* pauseBG = loadTexture(renderer, "Assets/backgrounds/gameover_bg.png");
+    SDL_Texture* gameOverBG = loadTexture(renderer, "Assets/backgrounds/gameover_bg.png");
+
     //Radio textures
     SDL_Texture* radioTex = loadTexture(renderer, "Assets/Radio.png");
 
@@ -305,7 +310,7 @@ void GameManager::run() {
     // ----- PAUSE MENU (ESC) -----
     if (!gameOver && event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
 
-        GameOverScreen pause(renderer);
+        GameOverScreen pause(renderer, pauseBG);
 
         int factIndex = currentLevel - 1;
         if (factIndex < 0) factIndex = 0;
@@ -382,7 +387,7 @@ void GameManager::run() {
 
             // --- edit start ---
             int timeRemaining = 0;
-            
+
             // If level 4, get the timer
             if (currentLevel == 4)
             {
@@ -654,7 +659,7 @@ void GameManager::run() {
 
 // ----- EDIT START ----
 if (gameOver) {
-    GameOverScreen go(renderer);
+    GameOverScreen go(renderer, gameOverBG);
 
     std::string result = go.run("Game Over!", facts);
 
