@@ -20,12 +20,12 @@ private:
     TTF_Font* fontLarge;
     TTF_Font* fontSmall;
 
-    TTF_Font* fontTitle;     // large (Mission Successful)
-    TTF_Font* fontStats;     // for Final Score + Rank
-    TTF_Font* fontHeader;    // “Pilot, this is Command.”
-    TTF_Font* fontBody;      // typewriter + closing line
+    TTF_Font* fontTitle;     
+    TTF_Font* fontStats;    
+    TTF_Font* fontHeader;    
+    TTF_Font* fontBody;      
 
-        SDL_Texture* bgTexture = nullptr;
+    SDL_Texture* bgTexture = nullptr;
 
 
     struct Button {
@@ -38,7 +38,7 @@ private:
     Button exitBtn;
     int hoveredIndex;
 
-    // ---- TYPEWRITER VARIABLES ----
+    // TYPEWRITER VARIABLES
     std::string fullText;
     std::string typedText;
     float typeTimer;

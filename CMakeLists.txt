@@ -139,12 +139,12 @@ enable_testing()
 
 # Test executable (simple tests without SDL dependencies)
 add_executable(TideSweeperTests
-    Tests/test_example.cpp
     Tests/test_collision.cpp
     Tests/test_submarine.cpp
     Tests/test_litter.cpp
     Tests/test_level.cpp
     Tests/test_rendering.cpp
+    Tests/test_reset.cpp
     # Add source files needed for testing
     src/Submarine.cpp
     src/Litter.cpp

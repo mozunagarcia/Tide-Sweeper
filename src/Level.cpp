@@ -7,10 +7,7 @@
 #include <algorithm>
 #include <SDL_ttf.h>
 
-// ============================================================================
-// Base Level class implementation
-// ============================================================================
-
+// Base Level Class Implementation
 Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTextures,
              const std::vector<SDL_Texture*>& enemyTextures_, const std::vector<float>& enemySpeeds_,
              const std::vector<int>& enemyWidths_, const std::vector<int>& enemyHeights_)
@@ -62,9 +59,7 @@ Level::Level(SDL_Renderer* renderer_, const std::vector<SDL_Texture*>& litterTex
     }
 }
 
-Level::~Level() {
-    // Textures are owned elsewhere; Litter/Enemies don't free them here
-}
+Level::~Level() {}
 
 void Level::reset() {
     // Reset litter positions and make them active
@@ -85,7 +80,6 @@ void Level::reset() {
     isBlackoutFading = false;
     isBlackoutFullyCovered = false;
     fullCoverCounter = 0;
-    // oilSpots.clear();
 }
 
 void Level::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
@@ -119,7 +113,7 @@ void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
             int randomIndex = rand() % enemyTextures.size();
             float startX, startY;
             
-            // Octopus (index 2) spawns from bottom, others from right
+            // Octopus spawns from bottom, others from right
             if (randomIndex == 2) {
                 startX = rand() % 700 + 50;  // Random X position across screen
                 startY = 600;  // Start from bottom
@@ -140,7 +134,7 @@ void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
     
     for (auto it = enemyItems.begin(); it != enemyItems.end();) {
         // Remove enemies that go off screen
-        // Octopus (type 2) removed when going off top, others when going off left
+        // Octopus removed when going off top, others when going off left
         bool offScreen = (it->enemyType == 2 && it->y < -100) || 
                         (it->enemyType != 2 && it->x < -100) || 
                         (it->y > 600 && it->falling);
@@ -164,18 +158,16 @@ void Level::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
     }
 }
 
-void Level::updateBlackoutMechanic() {
-    // Default: no blackout mechanic (only in Level 3)
-}
+// Default: no blackout mechanic (only in Level 3)
+void Level::updateBlackoutMechanic() {}
 
 void Level::render() {
     for (auto& litter : litterItems) litter.render(renderer);
     for (auto& e : enemyItems) e.render(renderer);
 }
 
-void Level::renderBlackoutEffects(Submarine& submarine) {
-    // Default: no blackout effects (only in Level 3)
-}
+// Default: no blackout effects (only in Level 3)
+void Level::renderBlackoutEffects(Submarine& submarine) {}
 
 void Level::calmEnemies(float subX, float subY, float radius) {
     for (auto& enemy : enemyItems) {

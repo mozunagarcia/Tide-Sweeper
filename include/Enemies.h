@@ -15,12 +15,12 @@ public:
     bool falling = false;   
     float fallSpeed = 0;    
     int enemyType = 0;      // 0=Swordfish, 1=Eel, 2=Octopus, 3=Angler, 4=Shark
-    bool calmed = false;    // If true, enemy ignores player and moves left
-    bool deflecting = false; // If true, currently being pushed away
-    float deflectDirX = 0;   // Direction for deflection
+    bool calmed = false;    
+    bool deflecting = false; 
+    float deflectDirX = 0;   
     float deflectDirY = 0;
-    int deflectTimer = 0;    // Timer for deflection animation
-    bool facingRight = false; // Track facing direction for sprite flipping
+    int deflectTimer = 0;   
+    bool facingRight = false; 
 
     Enemies(SDL_Texture* tex, float startX, float startY, float moveSpeed, int w = 90, int h = 90, int type = 0);
     void update(float subX, float subY); 
