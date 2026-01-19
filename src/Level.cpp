@@ -190,9 +190,9 @@ void Level::calmEnemies(float subX, float subY, float radius) {
             enemy.deflecting = true;
             enemy.deflectDirX = dirX;
             enemy.deflectDirY = dirY;
-            enemy.deflectTimer = 30;  // 30 frames for smooth deflection
+            enemy.deflectTimer = 30;  // 30 frames
             
-            // Set enemy to calmed state (will move left after deflection)
+            // Set enemy to calmed state
             enemy.calmed = true;
         }
     }
@@ -202,9 +202,7 @@ void Level::setOilTexture(SDL_Texture* oilTex) {
     oilTexture = oilTex;
 }
 
-// ============================================================================
-// Level 1: Only litter, no animals
-// ============================================================================
+// Level 1: Only Litter, no animals 
 
 Level1::Level1(SDL_Renderer* renderer,
                const std::vector<SDL_Texture*>& litterTextures,
@@ -217,7 +215,6 @@ Level1::Level1(SDL_Renderer* renderer,
 }
 
 void Level1::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bool& gameOver) {
-    // Update litter only (no enemies in Level 1)
     for (auto& litter : litterItems) {
         bool missed = litter.update();
         if (missed) {
@@ -228,13 +225,9 @@ void Level1::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
             scoreboard.setScore(scoreboard.getScore() + 10);
         }
     }
-    // No enemy spawning or updates in Level 1
 }
 
-// ============================================================================
 // Level 2: Litter + Animals (uses base class implementation)
-// ============================================================================
-
 Level2::Level2(SDL_Renderer* renderer,
                const std::vector<SDL_Texture*>& litterTextures,
                const std::vector<SDL_Texture*>& enemyTextures,
@@ -246,14 +239,14 @@ Level2::Level2(SDL_Renderer* renderer,
 }
 
 void Level2::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
-    // Spawn enemies periodically (excluding octopuses)
+    // Spawn enemies periodically
     spawnTimer++;
     if (spawnTimer >= spawnInterval) {
         spawnTimer = 0;
         int activeCount = 0;
         for (const auto& enemy : enemyItems) if (enemy.active) activeCount++;
         if (activeCount < maxActiveEnemies && !enemyTextures.empty()) {
-            // Exclude octopus (index 2) from Level 2
+            // Exclude octopus
             int randomIndex;
             do {
                 randomIndex = rand() % enemyTextures.size();
@@ -294,9 +287,7 @@ void Level2::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
     }
 }
 
-// ============================================================================
 // Level 3: Litter + Animals + Oil blackout mechanics
-// ============================================================================
 
 Level3::Level3(SDL_Renderer* renderer,
                const std::vector<SDL_Texture*>& litterTextures,
@@ -315,9 +306,7 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     // Level 3 specific: Update blackout mechanic
     blackoutNext++;
     if (isBlackoutFading) {
-        blackoutCounter++; // Continue incrementing for wave animation
-        // Blackout is receding from the left edge
-        // Allow it to go below 0 so waves disappear completely beyond right edge
+        blackoutCounter++; 
         if (blackoutWidth > -100) {
             blackoutWidth -= 2; // Slower fade out: 800/400 = 2 pixels per frame
         } else {
@@ -329,16 +318,14 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
         }
     } else if (isBlackout) {
         blackoutCounter++;
-        // Expand blackout from right edge (takes about 400 frames to fully cover screen)
-        // Add extra width (900) to allow waves to disappear completely beyond left edge
         if (blackoutWidth < 900) {
             blackoutWidth += 2; // 800/400 = 2 pixels per frame
         } else if (!isBlackoutFullyCovered) {
-            // Blackout has reached full width, wait for waves to settle
+            // Blackout has reached full width
             isBlackoutFullyCovered = true;
             fullCoverCounter = 0;
         } else {
-            // Count frames while fully covered (wait ~60 frames for waves to disappear)
+            // Count frames while fully covered
             fullCoverCounter++;
         }
         
@@ -346,7 +333,6 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
             // Start fading phase only after waves have settled
             isBlackoutFading = true;
             isBlackoutFullyCovered = false;
-            // oilSpots.clear();
         }
     } else if (isWarning) {
         // In warning phase, update oil spots appearance
@@ -368,17 +354,16 @@ void Level3::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
         }
     }
     
-    // Level 3 specific: Create ink splotches near octopuses
+    // Create ink splotches near octopuses
     for (auto& enemy : enemyItems) {
-        // Only create ink for octopuses (type 2)
         if (enemy.enemyType == 2 && enemy.active) {
-            // Random chance to spawn ink (about 5% per frame)
+            // Random chance to spawn ink
             if (rand() % 100 < 5) {
                 OilSpot inkSpot;
                 // Spawn ink near the octopus position
                 inkSpot.x = static_cast<int>(enemy.x) - 50 + (rand() % 100);
                 inkSpot.y = static_cast<int>(enemy.y) - 50 + (rand() % 100);
-                inkSpot.size = 250 + (rand() % 150);  // Random size 250-400 (bigger)
+                inkSpot.size = 250 + (rand() % 150);  // Random size 250-400
                 inkSpot.spawnFrame = 0;
                 inkSpot.alpha = 0.0f;
                 oilSpots.push_back(inkSpot);
@@ -450,23 +435,15 @@ void Level3::renderBlackoutEffects(Submarine& submarine) {
                 int xStart, width;
                 
                 if (isBlackoutFading) {
-                    // During fade: blackout recedes from left, waves on right edge
-                    // blackoutWidth shrinks from 800 to 0
                     xStart = 0;
                     int xEnd = blackoutWidth + static_cast<int>(wave);
-                    
                     // Clamp to screen bounds
                     if (xEnd < 0) xEnd = 0;
                     if (xEnd > 800) xEnd = 800;
                     
                     width = xEnd;
                 } else {
-                    // During expansion: blackout expands from right, waves on left edge
-                    // Calculate the starting x position for this row, applying the wave offset
-                    // 800 - blackoutWidth is the base position (right edge moving left)
-                    // + wave adds the wavy variation to create the irregular edge
                     xStart = 800 - blackoutWidth + static_cast<int>(wave);
-                    
                     // Clamp to screen bounds to prevent drawing outside the window
                     if (xStart < 0) xStart = 0;
                     if (xStart > 800) xStart = 800;
@@ -516,10 +493,7 @@ bool Level3::isPositionInBlackout(int x, int y) {
     }
 }
 
-// ============================================================================
 // Level 4: Superstorm Surge - Final level with timer
-// ============================================================================
-
 Level4::Level4(SDL_Renderer* renderer,
                const std::vector<SDL_Texture*>& litterTextures,
                const std::vector<SDL_Texture*>& enemyTextures,
@@ -533,13 +507,12 @@ Level4::Level4(SDL_Renderer* renderer,
       scrollOffset(0),
       litterSpawnTimer(0),
       storedLitterTextures(litterTextures)
-      //scrollSpeed(0.65f)  // Scroll feed for level 4
 {
     // More enemies for increased challenge in final level
     maxActiveEnemies = 4;  // 4 enemies on screen
     spawnInterval = 120;   // spawns every 2 seconds
 
-    float scale = 0.15f;        // choose your litter scale
+    float scale = 0.15f;   // choose your litter scale
     for (auto tex : storedLitterTextures) {
         int w = 0, h = 0;
         SDL_QueryTexture(tex, NULL, NULL, &w, &h);
@@ -603,20 +576,18 @@ void Level4::update(Submarine& submarine, Scoreboard& scoreboard, int& lives, bo
     updateEnemies(submarine, lives, gameOver);
 }
 
-// Override to disable ink/oil mechanics in Level 4
-void Level4::updateBlackoutMechanic() {
-    // No ink mechanics in final level
-}
+// No ink mechanics in final level
+void Level4::updateBlackoutMechanic() {}
 
 void Level4::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
-    // Spawn enemies periodically (excluding octopuses and sharks)
+    // Spawn enemies periodically
     spawnTimer++;
     if (spawnTimer >= spawnInterval) {
         spawnTimer = 0;
         int activeCount = 0;
         for (const auto& enemy : enemyItems) if (enemy.active) activeCount++;
         if (activeCount < maxActiveEnemies && !enemyTextures.empty()) {
-            // Exclude octopus (index 2) and shark (index 4) from Level 4
+            // Exclude octopus and shark from Level 4
             int randomIndex;
             do {
                 randomIndex = rand() % enemyTextures.size();
@@ -659,8 +630,8 @@ void Level4::updateEnemies(Submarine& submarine, int& lives, bool& gameOver) {
     }
 }
 
+// Render regular litter and enemies
 void Level4::render() {
-    // Render regular litter and enemies
     Level::render();
 }
 

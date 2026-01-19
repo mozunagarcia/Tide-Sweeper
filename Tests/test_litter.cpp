@@ -15,7 +15,7 @@ protected:
     SDL_Texture* texture;
 };
 
-// ========== ASSERTION TESTS ==========
+//  ASSERTION TESTS 
 
 TEST_F(LitterTest, LitterCreation) {
     Litter litter(texture, 100.0f, 150.0f, 5.0f);
@@ -82,7 +82,7 @@ TEST_F(LitterTest, NoCollisionWhenInactive) {
     EXPECT_FALSE(litter.checkCollision(subRect));
 }
 
-// ========== STUB TESTS ==========
+//  STUB TESTS 
 
 TEST(LitterStubTest, PositionStubSimulatesLitterMovement) {
     PositionStub stub;
@@ -120,7 +120,7 @@ TEST(LitterStubTest, CollisionStubOverridesDetection) {
     EXPECT_TRUE(stub.checkCollision(rect1, rect2));
 }
 
-// ========== MOCK TESTS ==========
+//  MOCK TESTS 
 
 TEST(LitterMockTest, Level4SpawnRateSimulation) {
     TimerStub timer;
@@ -165,7 +165,7 @@ TEST(LitterMockTest, MultipleSpeedVariations) {
     EXPECT_FLOAT_EQ(fast.getX(), 670.0f);    // 800 - 130
 }
 
-// ========== INTEGRATION TESTS WITH STUBS ==========
+//  INTEGRATION TESTS WITH STUBS 
 
 TEST(LitterIntegrationTest, OffScreenDetectionStub) {
     PositionStub stub;

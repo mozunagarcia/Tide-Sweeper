@@ -39,7 +39,7 @@ protected:
     }
 };
 
-// ========== ASSERTION TESTS ==========
+// ASSERTION TESTS 
 
 TEST_F(CollisionTest, SubmarineLitterCollision) {
     // Overlapping rectangles
@@ -92,7 +92,7 @@ TEST_F(CollisionTest, HorizontalAlignment) {
     EXPECT_FALSE(checkCollision(submarine, horizontalLitter));
 }
 
-// ========== STUB TESTS ==========
+// STUB TESTS
 
 TEST(CollisionStubTest, StubAlwaysReturnsTrue) {
     CollisionStub stub;
@@ -129,7 +129,7 @@ TEST(CollisionStubTest, ToggleCollisionBehavior) {
     EXPECT_FALSE(stub.checkCollision(rect1, rect2));
 }
 
-// ========== FACTORY TESTS ==========
+// FACTORY TESTS 
 
 TEST(RectFactoryTest, CreateSubmarineRect) {
     SDL_Rect sub = RectFactory::createSubmarine(150, 250);

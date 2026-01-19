@@ -6,13 +6,9 @@
 #include <iostream>
 #include "Litter.h"
 #include "Enemies.h"
-// ----- EDIT START -----
 #include "GameOverScreen.h"
 #include "Messages.h" 
 #include "StoryManager.h"
-
-//#include "ClueScreen.h"
-// ----- EDIT END -----
 
 // Helper to load textures (copied from original main)
 static SDL_Texture* loadTexture(SDL_Renderer* renderer, const char* path) {
@@ -37,8 +33,8 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
       running(true),
       startGame(false),
       backgroundMusic(nullptr),
-      levelCompleteSound(nullptr),   // IMPORTANT FIX
-      animalCollisionSound(nullptr), // IMPORTANT FIX
+      levelCompleteSound(nullptr),   
+      animalCollisionSound(nullptr), 
       showingLevel4Intro(false),
       level4IntroTimer(0),
       level4IntroBlinkCounter(0)
@@ -46,7 +42,6 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
     // Create menu 
     menu = new Menu(renderer);
 
-    // ----- EDIT START -----
     // Initialize upgraded Messages system
     msgManager = new Messages(renderer);
     storyManager = new StoryManager(msgManager);
@@ -69,7 +64,6 @@ GameManager::GameManager(SDL_Window* window_, SDL_Renderer* renderer_)
         "The ocean floor contains millions of tons of trash, including lost cargo.",
         "Recycling one plastic bottle saves enough energy to power a light bulb for hours."
     };
-    // ----- EDIT END -----
 }
 
 GameManager::~GameManager() {
@@ -133,7 +127,6 @@ GameManager::~GameManager() {
 
 
 void GameManager::run() {
-    // --- MENU LOOP ---
     while (running && !startGame) {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
@@ -177,7 +170,6 @@ void GameManager::run() {
     // Load game background music
     backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.mp3");
     if (!backgroundMusic) {
-        // Try .wav if .mp3 doesn't exist
         backgroundMusic = Mix_LoadMUS("Assets/music/beach-house-tune-144457.wav");
         if (!backgroundMusic) {
             std::cerr << "Failed to load game music! Mix_Error: " << Mix_GetError() << std::endl;
@@ -192,14 +184,14 @@ void GameManager::run() {
         Mix_VolumeChunk(timerSound, MIX_MAX_VOLUME / 4);  // Set volume
     }
     
-    // Play game music on loop (-1 means infinite loop)
+    // Play game music on loop
     if (backgroundMusic) {
         Mix_PlayMusic(backgroundMusic, -1);
-        Mix_VolumeMusic(MIX_MAX_VOLUME / 2); // Set to 50% volume
+        Mix_VolumeMusic(MIX_MAX_VOLUME / 2); // Set volume
     }
 
 
-    // --- Load shared textures --- (paths kept identical to original)
+    // Load shared textures
     SDL_Texture* ocean = loadTexture(renderer, "Assets/backgrounds/Level1.png");
     SDL_Texture* submarineTex = loadTexture(renderer, "Assets/submarine.png");
     if (!ocean || !submarineTex) {
@@ -267,9 +259,8 @@ void GameManager::run() {
     level->setOilTexture(oilTex);
     level->setAnimalCollisionSound(animalCollisionSound);
 
-    //----edit
     storyManager->onLevelChange(1);
-    //----edit
+
     // Game state
     int lives = 3;
     bool gameOver = false;
@@ -282,12 +273,10 @@ void GameManager::run() {
 
     // Reset function
     auto resetGame = [&]() {
-        //edit
         storyManager->onLevelChange(1);
         msgManager->reset();
         msgManager->update();
 
-        //edit
         lives = 3;
         gameOver = false;
         submarine->setPosition(200, 275);
@@ -343,9 +332,9 @@ void GameManager::run() {
         running = false;
     }
 
-    //------AUTO VICTORY SCENE----------------------------------
+    //AUTO V ICTORY SCENE (for demo purposes)
 
-    // ----- DEBUG: Press V to trigger the victory screen instantly -----
+    // Press V to trigger the victory screen instantly 
     if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_v) {
 
         // Stop all gameplay audio
@@ -375,13 +364,7 @@ void GameManager::run() {
         }
     }
 
-
-    //------AUTO VICTORY SCENE----------------------------------
-
-
-
-
-    // ----- PAUSE MENU (ESC) -----
+    // PAUSE MENU (ESC)
     if (!gameOver && event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
 
         GameOverScreen pause(renderer, pauseBG);
@@ -390,16 +373,15 @@ void GameManager::run() {
         if (factIndex < 0) factIndex = 0;
         if (factIndex >= facts.size()) factIndex = facts.size() - 1;
 
-        // Title is different for pause!
         std::string action = pause.run("Paused", facts);
 
-        if (action == "resume") {
-    continue;
-}
+        if (action == "resume") { 
+            continue;   // resume
+    }
 
         if (action == "restart") {
             resetGame();
-            continue;
+            continue;   // restart
         }
         if (action == "menu") {
             resetGame();
@@ -433,7 +415,7 @@ void GameManager::run() {
             if (keys[SDL_SCANCODE_LEFT])  submarine->moveBy(-moveSpeed, 0);
             if (keys[SDL_SCANCODE_RIGHT]) submarine->moveBy(moveSpeed, 0);
             
-            // Calm ability with SPACE (prevents enemy from attacking when chasing is activated)
+            // Calm ability with SPACE 
             if (keys[SDL_SCANCODE_SPACE]) {
                 float subX = subRect.x + subRect.w / 2.0f;
                 float subY = subRect.y + subRect.h / 2.0f;
@@ -450,7 +432,7 @@ void GameManager::run() {
                 level4IntroTimer++;
                 level4IntroBlinkCounter++;
                 
-                // End intro after 3 seconds (180 frames at 60 FPS)
+                // End intro after 3 seconds 
                 if (level4IntroTimer >= 180) {
                     showingLevel4Intro = false;
                     timerMusicPlayed = false;  // Reset timer music flag for Level 4
@@ -462,7 +444,7 @@ void GameManager::run() {
                 // Check if we're in Level 4 and need to play timer music
                 if (currentLevel == 4 && !timerMusicPlayed) {
                     Level4* level4 = dynamic_cast<Level4*>(level);
-                    if (level4 && level4->getStormTimer() <= 660) {  // 11 seconds = 660 frames (plays 1 second earlier)
+                    if (level4 && level4->getStormTimer() <= 660) {  
                         if (timerSound) {
                             Mix_PlayChannel(-1, timerSound, 0);  // Play timer sound on available channel
                         }
@@ -471,7 +453,6 @@ void GameManager::run() {
                 }
             }
 
-            // --- edit start ---
             int timeRemaining = 0;
 
             // If level 4, get the timer
@@ -485,7 +466,7 @@ void GameManager::run() {
 
             storyManager->update(scoreboard->getScore(), scoreboard->getLevel(), timeRemaining);
 
-            // ---- FIRST ANIMAL DETECTION (Level 2) ----
+            // FIRST ANIMAL DETECTION (Level 2) 
             if (currentLevel == 2 && !storyManager->animalMessagePlayed)
             {
                 // If enemies exist, an animal has spawned
@@ -495,7 +476,7 @@ void GameManager::run() {
                 }
             }
 
-            // ---- FIRST OIL SLICK DETECTION (Level 3) ----
+            // FIRST OIL SLICK DETECTION (Level 3) 
             if (currentLevel == 3 && !storyManager->oilMessagePlayed)
             {
                  Level3* level3 = dynamic_cast<Level3*>(level);
@@ -508,18 +489,13 @@ void GameManager::run() {
                 }
             }
             }
-
-            // --- edit end ---
-
             
             // Detect level changes and swap background + create new level instance
             {
                 int newLevel = scoreboard->getLevel();
                 if (newLevel != currentLevel) {
                    
-                    // --- edit start ---
                     storyManager->onLevelEnd(currentLevel);
-                    // --- edit end ---
 
                     // Play level complete sound
                     if (levelCompleteSound) {
@@ -535,9 +511,7 @@ void GameManager::run() {
                     delete level;
                     level = nullptr;
 
-                    // --- edit start ---
                     storyManager->onLevelChange(currentLevel);
-                    // --- edit end ---
                     
                     if (currentLevel == 1) {
                         level = new Level1(renderer,
@@ -560,12 +534,10 @@ void GameManager::run() {
                         level->setAnimalCollisionSound(animalCollisionSound);
                         
                         SDL_DestroyTexture(ocean);
-                        //SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean_background.png");
                         SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/Level2.png");
                         if (newOcean) {
                             ocean = newOcean;
                         } else {
-                            //SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean_background.png");
                             SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/Level2.png");
                             if (altOcean) ocean = altOcean;
                             else std::cerr << "Failed to load Level 2background: Assets/Level2.png" << std::endl;
@@ -583,12 +555,10 @@ void GameManager::run() {
                         level->setAnimalCollisionSound(animalCollisionSound);
                         
                         SDL_DestroyTexture(ocean);
-                        // SDL_Texture* newOcean = loadTexture(renderer, "Assets/ocean3.png");
                         SDL_Texture* newOcean = loadTexture(renderer, "Assets/backgrounds/Level3.png");
                          if (newOcean) {
                             ocean = newOcean;
                         } else {
-                            // SDL_Texture* altOcean = loadTexture(renderer, "/Assets/ocean3.png");
                             SDL_Texture* altOcean = loadTexture(renderer, "Assets/backgrounds/Level3.png");
                             if (altOcean) ocean = altOcean;
                             else std::cerr << "Failed to load ocean3.png: Assets/background/Level3.png" << std::endl;
@@ -612,7 +582,6 @@ void GameManager::run() {
                         level = new Level4(renderer,
                                           { canTex, bottleTex, bagTex, cupTex, colaTex, smallcanTex, beerTex },
                                           enemyTextures, enemySpeeds, enemyWidths, enemyHeights);
-                        //level->setLitterItems(savedLitter);  // Keep Level 3 litter for smooth transition
                         storyManager->setLevelPointer(level);
 
                         level->setOilTexture(oilTex);
@@ -622,7 +591,7 @@ void GameManager::run() {
             }
         }
 
-        // Scroll background (faster in Level 4 with debris wall)
+        // Scroll background (faster in Level 4)
         float effectiveScrollSpeed = scrollSpeed;
         if (currentLevel == 4) {
             Level4* level4 = dynamic_cast<Level4*>(level);
@@ -645,7 +614,7 @@ void GameManager::run() {
 
         // Level 4 intro overlay
         if (showingLevel4Intro) {
-            // Render scrolling background animation (moves background)
+            // Render scrolling background animation
             cameraX += scrollSpeed * 2.0f;  // Faster scroll during intro
             
             // "Ready, Set, Go" 
@@ -743,7 +712,6 @@ void GameManager::run() {
             }
         }
 
-// ----- EDIT START ----
 // Check if Level 4 timer has completed (treat as game over for now)
 if (currentLevel == 4 && lives > 0) {
     Level4* level4 = dynamic_cast<Level4*>(level);
@@ -785,7 +753,6 @@ if (victory) {
         break;
     }
 } else if (gameOver) {
-//if (gameOver) {
     GameOverScreen go(renderer, gameOverBG);
 
     std::string result = go.run("Game Over!", facts);
@@ -810,7 +777,6 @@ storyManager->renderLevelChange(renderer);
 msgManager->update();
 msgManager->render();
 
-// ----- EDIT END -----
         SDL_RenderPresent(renderer);
         
         // Frame timing - maintain exactly 60 FPS

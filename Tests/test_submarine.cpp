@@ -16,7 +16,7 @@ protected:
     SDL_Texture* texture;
 };
 
-// ========== ASSERTION TESTS ==========
+//  ASSERTION TESTS 
 
 TEST_F(SubmarineTest, InitialPosition) {
     Submarine sub(texture, 100, 200, 64, 64);
@@ -83,7 +83,7 @@ TEST_F(SubmarineTest, BlinkUpdate) {
     EXPECT_FALSE(sub.isInvulnerable());
 }
 
-// ========== STUB TESTS ==========
+//  STUB TESTS 
 
 TEST(SubmarineStubTest, PositionStubTracksMovement) {
     PositionStub stub;
@@ -117,7 +117,7 @@ TEST(SubmarineStubTest, MockTextureReturnsControlledSize) {
     EXPECT_EQ(mockTex.getHeight(), 96);
 }
 
-// ========== INTEGRATION WITH STUBS ==========
+//  INTEGRATION WITH STUBS 
 
 TEST(SubmarineIntegrationTest, MovementWithinBounds) {
     PositionStub stub;

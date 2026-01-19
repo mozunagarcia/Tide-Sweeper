@@ -44,7 +44,7 @@ private:
     bool showingLevel4Intro;
     int level4IntroTimer;
     int level4IntroBlinkCounter;
-    bool timerMusicPlayed;  // Track if 10s timer music has been played
+    bool timerMusicPlayed; 
 
     std::vector<std::string> facts;   // Fact strings used in pause + game over
 };

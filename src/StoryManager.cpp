@@ -144,7 +144,7 @@ void StoryManager::update(int score, int level, int timeRemaining)
 {
     auto& L = levels[level];
 
-    // ---------- LEVEL 4 TIMER-BASED TRIGGERS ----------
+    // LEVEL 4 TIMER-BASED TRIGGERS
     if (level == 4)
     {
         Level4* lv4 = dynamic_cast<Level4*>(currentLevelPtr);
@@ -165,7 +165,7 @@ void StoryManager::update(int score, int level, int timeRemaining)
     }
 
 
-    // ---------- NORMAL SCORE TRIGGERS (levels 1–3) ----------
+    // NORMAL SCORE TRIGGERS (levels 1–3)
     if (level != 4)        // prevent overlap
     {
         if (score >= L.nextScore &&
@@ -216,13 +216,12 @@ void StoryManager::renderLevelChange(SDL_Renderer* renderer)
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 170);
     SDL_RenderFillRect(renderer, &bg);
 
-    //--edit--
     SDL_Rect txt = { bg.x + 20, bg.y + 10, w, h };
 
     // TIMING
     Uint32 elapsed  = now - lvlChangeStart;
 
-    // ---- 1. FULLY VISIBLE FOR FIRST 3 SECONDS ----
+    // FULLY VISIBLE FOR FIRST 3 SECONDS
     if (elapsed < 3000)  
     {
         SDL_SetTextureAlphaMod(tex, 255);   // fully visible
@@ -230,7 +229,7 @@ void StoryManager::renderLevelChange(SDL_Renderer* renderer)
     }
     else
     {
-        // ---- 2. FINAL 0.5 SECOND FLICKER ----
+        // FINAL 0.5 SECOND FLICKER 
         // Flickers every 60ms
         bool flickerOn = ((now / 60) % 2) == 0;
 
@@ -239,7 +238,6 @@ void StoryManager::renderLevelChange(SDL_Renderer* renderer)
         if (flickerOn)
             SDL_RenderCopy(renderer, tex, NULL, &txt);
     }
-    //--edit--
 
     SDL_FreeSurface(surf);
     SDL_DestroyTexture(tex);

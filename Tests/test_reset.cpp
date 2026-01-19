@@ -4,7 +4,7 @@
 #include "../include/ScoreDisplay.hpp"
 #include "test_mocks.h"
 
-// ========== SUBMARINE RESET TESTS ==========
+//  SUBMARINE RESET TESTS 
 
 class SubmarineResetTest : public ::testing::Test {
 protected:
@@ -116,7 +116,7 @@ TEST_F(SubmarineResetTest, ResetAndTakeNewDamage) {
     EXPECT_TRUE(sub.isInvulnerable());
 }
 
-// ========== SCOREDISPLAY RESET TESTS ==========
+//  SCOREDISPLAY RESET TESTS 
 
 class ScoreDisplayResetTest : public ::testing::Test {
 protected:
@@ -133,61 +133,61 @@ protected:
     SDL_Renderer* renderer;
 };
 
-TEST_F(ScoreDisplayResetTest, ResetLevelToOne) {
-    // This test would need proper SDL initialization
-    // For now, documenting expected behavior
+// TEST_F(ScoreDisplayResetTest, ResetLevelToOne) {
+//     // This test would need proper SDL initialization
+//     // For now, documenting expected behavior
     
-    // ScoreDisplay display(renderer, 10, 10, 200, 80);
-    // display.setScore(250);  // This should advance to level 3
-    // EXPECT_EQ(display.getLevel(), 3);
+//     // ScoreDisplay display(renderer, 10, 10, 200, 80);
+//     // display.setScore(250);  // This should advance to level 3
+//     // EXPECT_EQ(display.getLevel(), 3);
     
-    // display.resetLevel();
-    // EXPECT_EQ(display.getLevel(), 1);
-}
+//     // display.resetLevel();
+//     // EXPECT_EQ(display.getLevel(), 1);
+// }
 
-TEST_F(ScoreDisplayResetTest, ResetLevelPreservesScore) {
-    // ScoreDisplay display(renderer, 10, 10, 200, 80);
-    // display.setScore(250);
+// TEST_F(ScoreDisplayResetTest, ResetLevelPreservesScore) {
+//     // ScoreDisplay display(renderer, 10, 10, 200, 80);
+//     // display.setScore(250);
     
-    // display.resetLevel();
-    // EXPECT_EQ(display.getLevel(), 1);
-    // EXPECT_EQ(display.getScore(), 250);  // Score should remain
-}
+//     // display.resetLevel();
+//     // EXPECT_EQ(display.getLevel(), 1);
+//     // EXPECT_EQ(display.getScore(), 250);  // Score should remain
+// }
 
-TEST_F(ScoreDisplayResetTest, ResetLevelFromDifferentLevels) {
-    // ScoreDisplay display(renderer, 10, 10, 200, 80);
+// TEST_F(ScoreDisplayResetTest, ResetLevelFromDifferentLevels) {
+//     // ScoreDisplay display(renderer, 10, 10, 200, 80);
     
-    // Test from level 2
-    // display.setScore(150);
-    // EXPECT_EQ(display.getLevel(), 2);
-    // display.resetLevel();
-    // EXPECT_EQ(display.getLevel(), 1);
+//     // Test from level 2
+//     // display.setScore(150);
+//     // EXPECT_EQ(display.getLevel(), 2);
+//     // display.resetLevel();
+//     // EXPECT_EQ(display.getLevel(), 1);
     
-    // Test from level 3
-    // display.setScore(300);
-    // EXPECT_EQ(display.getLevel(), 3);
-    // display.resetLevel();
-    // EXPECT_EQ(display.getLevel(), 1);
+//     // Test from level 3
+//     // display.setScore(300);
+//     // EXPECT_EQ(display.getLevel(), 3);
+//     // display.resetLevel();
+//     // EXPECT_EQ(display.getLevel(), 1);
     
-    // Test from level 4
-    // display.setScore(500);
-    // EXPECT_EQ(display.getLevel(), 4);
-    // display.resetLevel();
-    // EXPECT_EQ(display.getLevel(), 1);
-}
+//     // Test from level 4
+//     // display.setScore(500);
+//     // EXPECT_EQ(display.getLevel(), 4);
+//     // display.resetLevel();
+//     // EXPECT_EQ(display.getLevel(), 1);
+// }
 
-TEST_F(ScoreDisplayResetTest, MultipleResetLevelCalls) {
-    // ScoreDisplay display(renderer, 10, 10, 200, 80);
-    // display.setScore(300);
+// TEST_F(ScoreDisplayResetTest, MultipleResetLevelCalls) {
+//     // ScoreDisplay display(renderer, 10, 10, 200, 80);
+//     // display.setScore(300);
     
-    // display.resetLevel();
-    // display.resetLevel();
-    // display.resetLevel();
+//     // display.resetLevel();
+//     // display.resetLevel();
+//     // display.resetLevel();
     
-    // EXPECT_EQ(display.getLevel(), 1);
-}
+//     // EXPECT_EQ(display.getLevel(), 1);
+// }
 
-// ========== INTEGRATION RESET TESTS ==========
+//  INTEGRATION RESET TESTS 
 
 TEST(ResetIntegrationTest, ResetGameStateSimulation) {
     SDL_Texture* texture = nullptr;
@@ -247,7 +247,7 @@ TEST(ResetIntegrationTest, ConcurrentResetOperations) {
     EXPECT_FALSE(sub2.isInvulnerable());
 }
 
-// ========== BOUNDARY RESET TESTS ==========
+//  BOUNDARY RESET TESTS 
 
 TEST(ResetBoundaryTest, ResetWithZeroPosition) {
     SDL_Texture* texture = nullptr;
@@ -288,7 +288,7 @@ TEST(ResetBoundaryTest, ResetImmediatelyAfterConstruction) {
     EXPECT_EQ(rect.y, 200);
 }
 
-// ========== EDGE CASE RESET TESTS ==========
+//  EDGE CASE RESET TESTS 
 
 TEST(ResetEdgeCaseTest, ResetWithMinimalBlinkTime) {
     SDL_Texture* texture = nullptr;

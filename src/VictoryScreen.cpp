@@ -73,7 +73,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
         SDL_RenderFillRect(renderer, &bg);
     }
 
-    // === Transparent Victory Panel ===
+    // Transparent Victory Panel 
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 120);   // semi-transparent black
     SDL_Rect panel = { 0, 0, 800, 600 };
     SDL_RenderFillRect(renderer, &panel);
@@ -87,15 +87,12 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
     int closingLineY = 435;
     int buttonY      = 485;
 
-    // ---- CENTERING + WIDTH CONTROL ----
+    // CENTERING + WIDTH CONTROL
     const int wrapWidth = 600;                     // typewriter width control
     const int centerX   = (800 - wrapWidth) / 2;   // left edge of centered block
 
 
-
-    // ===========================================================
     // 1. TITLE (large, centered)
-    // ===========================================================
     {
         y = 50;
         SDL_Surface* surf = TTF_RenderText_Blended(fontTitle, "Mission Successful!", gold);
@@ -103,7 +100,6 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
         SDL_Rect r = { (800 - surf->w)/2, y, surf->w, surf->h };
         SDL_RenderCopy(renderer, tex, NULL, &r);
 
-        // ⭐ NEW: This is the correct place for stats
         int statsY = y + surf->h - 60;
 
         y = statsY + 70; // move rest of layout below stats
@@ -114,9 +110,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
     }
 
 
-    // ===========================================================
-    // 2. STATS BLOCK — YOU CONTROL SIZE AND POSITION
-    // ===========================================================
+    // STATS BLOCK — YOU CONTROL SIZE AND POSITION
 
     {
             std::string score = "Final Score: " + std::to_string(finalScore);
@@ -128,7 +122,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
         SDL_Texture* t1 = SDL_CreateTextureFromSurface(renderer, s1);
         SDL_Texture* t2 = SDL_CreateTextureFromSurface(renderer, s2);
 
-        // <<< CENTER HORIZONTALLY >>>
+        // CENTER HORIZONTALLY
         int scoreX = (800 - s1->w) / 2;
         int rankX  = (800 - s2->w) / 2;
 
@@ -147,9 +141,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
     }
 
 
-    // ===========================================================
-    // 4. TYPEWRITER BODY TEXT
-    // ===========================================================
+    // TYPEWRITER BODY TEXT
     {
         if (!typedText.empty()) {
             SDL_Surface* surf = TTF_RenderText_Blended_Wrapped(fontBody, typedText.c_str(), white, wrapWidth);
@@ -177,9 +169,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
     }
 
 
-    // ===========================================================
-    // 5. CLOSING LINE (centered, medium size)
-    // ===========================================================
+    // CLOSING LINE (centered, medium size)
     {
         SDL_Surface* surf = TTF_RenderText_Blended(fontStats, "Excellent work out there.", white);
         SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surf);
@@ -201,9 +191,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
 
 
 
-    // ===========================================================
-    // 6. BUTTONS (MOVE THEM DOWN HERE)
-    // ===========================================================
+    // BUTTONS (MOVE THEM DOWN HERE)
         restartBtn.rect.y = buttonY;
         menuBtn.rect.y    = buttonY;
         exitBtn.rect.y    = buttonY;
@@ -246,9 +234,7 @@ void VictoryScreen::render(float countdownRatio, int finalScore)
         drawBtn(menuBtn, 1);
         drawBtn(exitBtn, 2);
 
-    // ===========================================================
-    // 7. FOOTER CREDIT (tiny text at the bottom)
-    // ===========================================================
+    // FOOTER CREDIT (tiny text at the bottom)
     {
         SDL_Color gray = {200, 200, 200};
 

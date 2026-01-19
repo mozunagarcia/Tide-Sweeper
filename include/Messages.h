@@ -26,7 +26,7 @@ public:
     bool isActive() const { return active && (typewriterActive || !visibleText.empty());}
     bool isTypewriting() const { return typewriterActive; }
 
-    // --- NEW QUEUE FUNCTIONS ---
+    // NEW QUEUE FUNCTIONS
     void queueMessage(const std::string& msg) {
         pendingMessages.push(msg);
     }
@@ -40,7 +40,7 @@ public:
         }
         pendingMessages = newQ;
 
-        // ⭐ allow immediate interruption
+        // allow immediate interruption
         cooldownActive = false;
         active = false;
     }
@@ -57,7 +57,7 @@ private:
 
     SDL_Texture* radioTexture = nullptr;
 
-    // --- Radio typewriter ---
+    // Radio typewriter
     std::string fullText;
     std::string visibleText;
     Uint32 typeStart = 0;
@@ -68,12 +68,12 @@ private:
     int radioW = 380;
     int radioH = 80;
 
-    // --- NEW QUEUE VARIABLES ---
+    // NEW QUEUE VARIABLES
     std::queue<std::string> pendingMessages;
     Uint32 messageFinishTime = 0;
     bool cooldownActive = false;
 
-    // --- Cutscene ---
+    // Cutscene 
     std::vector<std::string> messageList;
     SDL_Texture* currentMessage = nullptr;
     int currentIndex = -1;

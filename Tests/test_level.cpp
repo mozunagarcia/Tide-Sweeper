@@ -5,7 +5,7 @@
 using ::testing::Return;
 using ::testing::_;
 
-// ========== ASSERTION TESTS ==========
+// ASSERTION TESTS 
 
 TEST(LevelTest, Placeholder) {
     // Levels require SDL initialization and textures
@@ -49,7 +49,7 @@ TEST(LevelLogicTest, LitterSpawnInterval) {
     EXPECT_TRUE(shouldSpawn);
 }
 
-// ========== STUB TESTS ==========
+// STUB TESTS 
 
 TEST(LevelStubTest, TimerSimulatesLevelDuration) {
     TimerStub timer;
@@ -99,7 +99,7 @@ TEST(LevelStubTest, EnemySpeedMultiplierStub) {
     EXPECT_FLOAT_EQ(level4Enemy.getSpeed(), 12.0f);
 }
 
-// ========== MOCK TESTS ==========
+// MOCK TESTS
 
 TEST(LevelMockTest, SimulateLevel4LitterFlow) {
     std::vector<PositionStub> litterItems;
@@ -170,7 +170,7 @@ TEST(LevelMockTest, EnemyTypeExclusion) {
     EXPECT_GT(allowedTypes.size(), 0);
 }
 
-// ========== INTEGRATION TESTS WITH STUBS ==========
+// INTEGRATION TESTS WITH STUBS 
 
 TEST(LevelIntegrationTest, CompleteLevel4Simulation) {
     TimerStub timer;

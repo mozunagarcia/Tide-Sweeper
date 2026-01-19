@@ -39,8 +39,7 @@ void GameOverScreen::render(const std::string& title,
                             bool showResume,
                             float countdownRatio)
 {
-    //--edit--
-    // ---- BACKGROUND ----
+    // BACKGROUND 
     if (background) {
         SDL_Rect full = {0, 0, 800, 600};
         SDL_RenderCopy(renderer, background, NULL, &full);
@@ -57,11 +56,10 @@ void GameOverScreen::render(const std::string& title,
         SDL_Rect bg = {0, 0, 800, 600};
         SDL_RenderFillRect(renderer, &bg);
     }
-//--edit--
 
     SDL_Color white = {255,255,255};
 
-    // ---- TITLE ----
+    // TITLE
     SDL_Surface* t = TTF_RenderText_Blended(fontLarge, title.c_str(), white);
     SDL_Texture* tt = SDL_CreateTextureFromSurface(renderer, t);
     SDL_Rect tr = { (800 - t->w)/2, 60, t->w, t->h };
@@ -69,7 +67,7 @@ void GameOverScreen::render(const std::string& title,
     SDL_FreeSurface(t);
     SDL_DestroyTexture(tt);
 
-    // ---- FACT ----
+    // FACT 
     SDL_Surface* f = TTF_RenderText_Blended_Wrapped(fontSmall, fact.c_str(), white, 700);
     SDL_Texture* ft = SDL_CreateTextureFromSurface(renderer, f);
     SDL_Rect fr = { 50, 150, f->w, f->h };
@@ -77,7 +75,7 @@ void GameOverScreen::render(const std::string& title,
     SDL_FreeSurface(f);
     SDL_DestroyTexture(ft);
 
-    // ---- COUNTDOWN BAR ----
+    // COUNTDOWN BAR 
     int barWidth = 700;
     int barHeight = 8;
     int barX = 50;
@@ -117,13 +115,13 @@ void GameOverScreen::render(const std::string& title,
     int bh = restartBtn.rect.h;
     int baseY = 430;
 
-    // ---- RESUME BUTTON ----
+    // RESUME BUTTON 
     if (showResume) {
         resumeBtn.rect.x = (800 - bw) / 2;  // centered
         resumeBtn.rect.y = baseY - 100;     // stays where you like it
     }
 
-    // ---- OTHER BUTTONS ----
+    //  OTHER BUTTONS 
     if (showResume) {
         // align Restart, Menu, Exit UNDER resume, centered as a group
         int totalWidth = 3 * bw + 2 * spacing;
@@ -226,7 +224,7 @@ std::string GameOverScreen::run(const std::string& title,
             }
         }
 
-        // ----- AUTO-SCROLL TIMER -----
+        // AUTO-SCROLL TIMER
         auto now = std::chrono::steady_clock::now();
         float elapsed =
             std::chrono::duration<float>(now - lastSwitch).count();

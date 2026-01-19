@@ -21,9 +21,6 @@ public:
     void renderBriefingChoices();
     ChatUI* chat = nullptr;
 
-
-
-
 private:
     SDL_Renderer* renderer;
     TTF_Font* font;
@@ -37,13 +34,13 @@ private:
     int hoveredIndex; 
     bool showInstructions;
 
-    // --- Briefing System ---
+    // Briefing System
     bool briefingActive = false;
     bool nameEntryActive = false;
     bool choiceActive = false;
     bool briefingFinished = false;
 
-        // --- Typing animation ---
+    // Typing animation 
     bool isTyping = false;
     std::string fullMessage = "";
     std::string visibleMessage = "";

@@ -99,9 +99,7 @@ void Messages::update()
 {
     Uint32 now = SDL_GetTicks();
 
-    // ============================================================
     //  QUEUE + COOLDOWN SYSTEM (only applies to RADIO messages)
-    // ============================================================
 
     // If radio finished typing and not yet cooling
     if (style == MessageStyle::RADIO && active && !typewriterActive && !cooldownActive)
@@ -141,9 +139,7 @@ void Messages::update()
         return;
     }
 
-    // ============================================================
     //  RADIO TYPEWRITER MODE (unchanged)
-    // ============================================================
     if (style == MessageStyle::RADIO)
     {
         // Only advance if we are typing
@@ -170,10 +166,7 @@ void Messages::update()
         return;
     }
 
-
-    // ============================================================
     //  CUTSCENE MODE (your original code untouched)
-    // ============================================================
     Uint32 elapsed = now - startTime;
     const Uint32 fadeTime = 400;
 
@@ -227,15 +220,12 @@ void Messages::update()
 
 
 void Messages::render() {
-
-    // ---------------------------------------
     // RADIO FIXED PANEL
-    // ---------------------------------------
     if (style == MessageStyle::RADIO) {
         int xPos = 90;
         int yPos = 520;
 
-        // --- RADIO SPRITE ---
+        // RADIO SPRITE
     if (radioTexture) {
         SDL_Rect radioRect = { 10, yPos - 12, 70, 70 }; // adjust to size you want
         SDL_RenderCopy(renderer, radioTexture, NULL, &radioRect);
@@ -263,9 +253,7 @@ void Messages::render() {
         return;
     }
 
-    // ---------------------------------------
     // CUTSCENE
-    // ---------------------------------------
     if (currentMessage) {
         SDL_Rect rect = { int(x), 450, 380, 110 };
         SDL_RenderCopy(renderer, currentMessage, NULL, &rect);

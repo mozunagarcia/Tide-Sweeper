@@ -56,7 +56,7 @@ void ChatUI::startBriefing(const std::string& playerName)
         script.push_back(m);
     };
 
-    // --- SCRIPT CONTENT ---
+    // SCRIPT CONTENT
 
     make("Commander", "Pilot, this is Command. Do you copy?", true,
         { "Loud and clear.", "Copy that." });
@@ -156,7 +156,7 @@ void ChatUI::update()
 
 void ChatUI::handleEvent(const SDL_Event& e)
 {
-    // --- Hover detection for buttons ---
+    // Hover detection for buttons
     if (e.type == SDL_MOUSEMOTION)
     {
         int mx = e.motion.x;
@@ -264,11 +264,11 @@ void ChatUI::render()
 {
     if (!renderer) return;
 
-    // ----- CHAT BACKGROUND -----
+    // CHAT BACKGROUND 
     SDL_SetRenderDrawColor(renderer, 10, 20, 40, 255);
     SDL_RenderFillRect(renderer, &chatRect);
 
-    // ----- TITLE BAR -----
+    // TITLE BAR 
     const int titleHeight = 40;
     SDL_Rect titleRect = { chatRect.x, chatRect.y, chatRect.w, titleHeight };
     SDL_SetRenderDrawColor(renderer, 20, 35, 60, 255);
@@ -276,17 +276,17 @@ void ChatUI::render()
 
     SDL_Color titleColor = {200, 220, 255, 255};
    
-    // --- Measure text height first ---
+    // Measure text height first 
     SDL_Surface* tempSurf = TTF_RenderText_Blended(briefFont, "Mission Briefing", titleColor);
     int textW = tempSurf ? tempSurf->w : 0;
     int textH = tempSurf ? tempSurf->h : 0;
     if (tempSurf) SDL_FreeSurface(tempSurf);
 
-    // --- Center vertically inside title bar ---
+    // Center vertically inside title bar
     const int briefHeight = 40;
     int centeredY = chatRect.y + (briefHeight - textH) / 2;
 
-    // --- Now draw it centered vertically ---
+    // Now draw it centered vertically
         SDL_Rect titleTextRect = {
         chatRect.x + (chatRect.w - textW) / 2,
         centeredY,
@@ -296,7 +296,7 @@ void ChatUI::render()
 
     renderText("Mission Briefing", titleColor, titleTextRect, false, briefFont);
 
-    // ----- SONAR SPRITE -----
+    // SONAR SPRITE 
 
     if (sonarSprite)
     {
@@ -304,7 +304,7 @@ void ChatUI::render()
     }
 
 
-    // ----- MESSAGE: CENTERED BUBBLE -----
+    // MESSAGE: CENTERED BUBBLE
 
     int contentTop = chatRect.y + titleHeight;
     int contentHeight = chatRect.h - titleHeight;
@@ -358,7 +358,7 @@ void ChatUI::render()
 
     renderText(current.visibleText, SDL_Color{255,255,255,255}, textRect, true);
 
-    // ----- RESPONSE BUTTONS -----
+    // RESPONSE BUTTONS 
     SDL_Color white = {255,255,255,255};
 
     for (int i = 0; i < responseButtons.size(); i++)
@@ -378,7 +378,7 @@ void ChatUI::render()
         renderText(b.text, white, tr, false);
     }
 
-    // ----- START BUTTON (Return to Menu) -----
+    // START BUTTON (Return to Menu) 
     if (showStartButton)
     {
     SDL_Color normal = { 60, 120, 200, 250 };

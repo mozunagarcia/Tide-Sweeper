@@ -27,14 +27,14 @@ void Enemies::update(float subX, float subY) {
         if (y > 600) {
             active = false;
         }
-        return;  // Don't do normal movement when falling
+        return; 
     }
     
     // If calmed, move in deflection direction and ignore player
     if (calmed) {
         // If still deflecting, move in deflection direction
         if (deflecting && deflectTimer > 0) {
-            x += deflectDirX * 4.0f;  // Increased deflection movement speed
+            x += deflectDirX * 4.0f;  // deflection movement speed
             y += deflectDirY * 4.0f;
             deflectTimer--;
             
@@ -49,7 +49,7 @@ void Enemies::update(float subX, float subY) {
             // Octopus moves upward when calmed
             y -= speed;
             
-            // Deactivate when off screen (top)
+            // Deactivate when off screen
             if (y < -height) {
                 active = false;
             }
@@ -62,7 +62,7 @@ void Enemies::update(float subX, float subY) {
                 facingRight = false;
             }
             
-            // Deactivate when off screen (left)
+            // Deactivate when off screen
             if (x < -width) {
                 active = false;
             }
@@ -75,23 +75,22 @@ void Enemies::update(float subX, float subY) {
     float dy = subY - y;
     float distance = std::sqrt(dx * dx + dy * dy);
     
-    // Only sharks (type 4) chase the submarine when in range
+    // Only sharks chase the submarine when in range
     if (enemyType == 4 && distance < detectionRadius && distance > 0) {
-        // Normalize direction and move toward submarine
         float dirX = dx / distance;
         float dirY = dy / distance;
         
         // Update facing direction based on movement
         if (dirX > 0) {
-            facingRight = true;  // Moving right
+            facingRight = true;  
         } else if (dirX < 0) {
-            facingRight = false; // Moving left
+            facingRight = false; 
         }
         
         x += dirX * speed;
         y += dirY * speed;
     } else if (enemyType == 2) {
-        // Octopus (type 2) moves upward from bottom
+        // Octopus moves upward from bottom
         y -= speed;
     } else {
         // Normal behavior: move left
@@ -107,7 +106,7 @@ void Enemies::update(float subX, float subY) {
 void Enemies::render(SDL_Renderer* renderer) {
     if (!active) return;
     
-    // Blink red if recently hit (alternating every 3 frames)
+    // Blink red if recently hit 
     if (hitBlinkTimer > 0 && (hitBlinkTimer / 3) % 2 == 0) {
         SDL_SetTextureColorMod(texture, 255, 100, 100);  // Red tint
     } else {

@@ -30,4 +30,4 @@ class ScoreDisplay {
         void updateLevelTexture();
 };
 
-#endif // SCORE_DISPLAY_HPP
+#endif 

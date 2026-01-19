@@ -13,7 +13,6 @@ Menu::Menu(SDL_Renderer* renderer)
       instructionsBackgroundTexture(nullptr),
       menuMusic(nullptr),
       selectedIndex(0),
-      // showInstructions(false),
       hoveredIndex(-1),
       briefingActive(false),
       nameEntryActive(false),
@@ -36,12 +35,9 @@ Menu::Menu(SDL_Renderer* renderer)
         std::cerr << "SDL_mixer could not initialize! Mix_Error: " << Mix_GetError() << std::endl;
     } else {
         // Load menu background music
-        menuMusic = Mix_LoadMUS("Assets/music/background_music.mp3");
+        menuMusic = Mix_LoadMUS("Assets/music/seaside_village.wav");
         if (!menuMusic) {
-            menuMusic = Mix_LoadMUS("Assets/music/background_music.wav");
-            if (!menuMusic) {
-                std::cerr << "Failed to load menu music! Mix_Error: " << Mix_GetError() << std::endl;
-            }
+            std::cerr << "Failed to load menu music! Mix_Error: " << Mix_GetError() << std::endl;
         }
         
         // Play menu music on loop
@@ -61,7 +57,7 @@ Menu::Menu(SDL_Renderer* renderer)
         std::cerr << "Failed to load title font: " << TTF_GetError() << std::endl;
     }
         
-    // --- Load font ---
+    // Load font 
     font = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 40);
     if (!font) {
         std::cerr << "Failed to load font: " << TTF_GetError() << std::endl;
@@ -73,10 +69,8 @@ Menu::Menu(SDL_Renderer* renderer)
     chat = new ChatUI(renderer, chatFont);
 
     chat->loadSonar("Assets/sonar.png");
-    // chat->loadChatBackground("Assets/backgrounds/chat_background.png");
 
-
-    // --- Load main menu background ---
+    // Load main menu background
     SDL_Surface* menuSurface = IMG_Load("Assets/backgrounds/menu_background.png");
     if (!menuSurface) {
         std::cerr << "Failed to load menu background: " << IMG_GetError() << std::endl;
@@ -85,7 +79,7 @@ Menu::Menu(SDL_Renderer* renderer)
         SDL_FreeSurface(menuSurface);
     }
 
-    // --- Load instructions background ---
+    // Load instructions background 
     SDL_Surface* instructionsSurface = IMG_Load("Assets/backgrounds/instructions_background.png");
     if (!instructionsSurface) {
         std::cerr << "Failed to load instructions background: " << IMG_GetError() << std::endl;
@@ -103,7 +97,7 @@ Menu::Menu(SDL_Renderer* renderer)
     }
 
 
-    // --- Define menu options ---
+    // Define menu options
     items = {"Start Game", "Instructions", "Quit"};
 }
 
@@ -246,10 +240,7 @@ void Menu::render()
 }
 
 
-    // ----------------------------
     // OTHERWISE, normal main menu
-    // ----------------------------
-
     SDL_RenderCopy(renderer, menuBackgroundTexture, NULL, NULL);
 
     if (showInstructions) {
@@ -269,13 +260,13 @@ void Menu::renderMainMenu() {
         SDL_RenderClear(renderer);
     }
 
-    // --- DARKEN OVERLAY ---
+    // DARKEN OVERLAY
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 40);   // adjust 120 for desired effect
     SDL_Rect overlay = {0, 0, WINDOW_WIDTH, WINDOW_HEIGHT};
     SDL_RenderFillRect(renderer, &overlay);
 
-    // ---- WELCOME TITLE ----
+    // WELCOME TITLE 
     float t = SDL_GetTicks() / 1000.0f;
     float speed = 1.0f;       
     float amplitude = 12.0f;
@@ -288,7 +279,7 @@ void Menu::renderMainMenu() {
    int titleY = 120 + (int)wave;
 
 
-    // --- Glow background for title ---
+    // Glow background for title 
     SDL_Color glowColor = {80, 160, 255, 180}; // ocean blue glow
     SDL_Surface* glowSurf = TTF_RenderText_Blended(titleFont, "Welcome to TideSweepers", glowColor);
     SDL_Texture* glowTex = SDL_CreateTextureFromSurface(renderer, glowSurf);
@@ -333,7 +324,7 @@ void Menu::renderMainMenu() {
     int startY = (WINDOW_HEIGHT - totalMenuHeight) / 2 + 60;
 
     for (int i = 0; i < items.size(); ++i) {
-        // --- Text color ---
+        // Text color 
         SDL_Color color = {220, 240, 255, 255}; // soft white-blue text
         if (i == hoveredIndex) color = {255, 210, 80, 255}; // warm gold when hovered
 
@@ -343,11 +334,11 @@ void Menu::renderMainMenu() {
         int textW, textH;
         SDL_QueryTexture(textTex, nullptr, nullptr, &textW, &textH);
 
-        // --- Centered positions ---
+        // Centered positions 
         int xPos = (WINDOW_WIDTH - textW) / 2;
         int yPos = startY + i * buttonSpacing;
 
-        // --- Button background box (smaller and consistent) ---
+        // Button background box (smaller and consistent) 
         SDL_Rect buttonRect = {
             xPos - paddingX,
             yPos - paddingY,
@@ -355,7 +346,7 @@ void Menu::renderMainMenu() {
             textH + paddingY * 2
         };
 
-        // --- Button background color ---
+        //  Button background color
         if (i == hoveredIndex)
             SDL_SetRenderDrawColor(renderer, 100, 200, 255, 160);  // aqua glow
         else
@@ -363,11 +354,11 @@ void Menu::renderMainMenu() {
 
         SDL_RenderFillRect(renderer, &buttonRect);
 
-        // --- Border ---
+        // Border
         SDL_SetRenderDrawColor(renderer, 180, 230, 255, 200);
         SDL_RenderDrawRect(renderer, &buttonRect);
 
-        // --- Render text centered in button ---
+        // Render text centered in button
         SDL_Rect dst = {xPos, yPos, textW, textH};
         SDL_RenderCopy(renderer, textTex, nullptr, &dst);
 
@@ -378,7 +369,7 @@ void Menu::renderMainMenu() {
 
 
 void Menu::renderInstructions() {
-    // --- Background setup ---
+    // Background setup
     if (instructionsBackgroundTexture) {
     SDL_RenderCopy(renderer, instructionsBackgroundTexture, nullptr, nullptr);
     } else {
@@ -387,17 +378,17 @@ void Menu::renderInstructions() {
     }
 
 
-    // --- Use a smaller font for instructions text ---
+    // Use a smaller font for instructions text
     TTF_Font* smallFont = TTF_OpenFont("Assets/fonts/OpenSans.ttf", 28); // Smaller font size
     if (!smallFont) {
         std::cerr << "Failed to load small font: " << TTF_GetError() << std::endl;
         return;
     }
 
-    // --- Text color ---
+    // Text color
     SDL_Color white = {255, 255, 255, 255};
 
-    // --- Cute intro text ---
+    // Cute intro text
     SDL_Surface* textSurface = TTF_RenderText_Blended_Wrapped(
         smallFont,
         "The sea needs your help!\n\n"
@@ -411,7 +402,7 @@ void Menu::renderInstructions() {
     int textW = 0, textH = 0;
     SDL_QueryTexture(textTex, nullptr, nullptr, &textW, &textH);
 
-    // --- Center the text nicely on screen ---
+    // Center the text nicely on screen
     SDL_Rect dst = {
         (WINDOW_WIDTH - textW) / 2,
         (WINDOW_HEIGHT - textH) / 2,
@@ -419,10 +410,10 @@ void Menu::renderInstructions() {
         textH
     };
 
-    // --- Render to screen ---
+    // Render to screen
     SDL_RenderCopy(renderer, textTex, nullptr, &dst);
 
-    // --- Cleanup ---
+    // Cleanup
     SDL_FreeSurface(textSurface);
     SDL_DestroyTexture(textTex);
     TTF_CloseFont(smallFont); //  Close small font after use
